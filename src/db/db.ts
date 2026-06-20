@@ -13,6 +13,8 @@ export interface SessionRecord {
   finishedAt: string
   /** Día local (YYYY-MM-DD) para calcular racha sin líos de zona horaria. */
   day: string
+  /** Duración en ms (para memoria: tiempo total; otros: null). */
+  durationMs: number | null
 }
 
 /**
@@ -26,7 +28,11 @@ const db = new Dexie('lucida') as Dexie & {
 }
 
 db.version(1).stores({
-  // Índices: id autoincremental, y campos por los que filtramos/ordenamos.
+  sessions: '++id, activity, mode, day, finishedAt',
+})
+
+// Versión 2: agrega durationMs (campo nullable, no requiere migración de datos).
+db.version(2).stores({
   sessions: '++id, activity, mode, day, finishedAt',
 })
 

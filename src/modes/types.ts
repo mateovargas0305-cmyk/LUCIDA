@@ -33,6 +33,9 @@ export type CalcOperation =
 /** Qué distingue al elemento "diferente" en la actividad de atención. */
 export type AttentionDiffBy = 'color' | 'forma'
 
+/** Dimensión en la que puede variar el elemento diferente entre rondas. */
+export type AttentionDiffDimension = 'color' | 'forma' | 'tamaño'
+
 /** Escala tipográfica en px. En Calmo, `base` nunca baja de 24 (regla sagrada). */
 export interface ModeTypography {
   /** Texto base de cuerpo. */
@@ -147,6 +150,8 @@ export interface MemoryActivityConfig {
   pairs: number
   /** Ms que una pareja no coincidente queda visible antes de ocultarse. */
   flipBackMs: number
+  /** Mostrar cronómetro de tiempo total. Calmo: false (regla sagrada). */
+  showTimer: boolean
 }
 
 export interface CalcActivityConfig {
@@ -163,16 +168,24 @@ export interface CalcActivityConfig {
 }
 
 export interface AttentionActivityConfig {
-  /** Cantidad total de elementos en la grilla. */
+  /** Cantidad base de elementos en la grilla. */
   items: number
   /** Columnas de la grilla. */
   columns: number
-  /** Qué distingue al diferente. */
+  /** @deprecated Usa differDimensions. Mantenido por compatibilidad con configs. */
   differBy: AttentionDiffBy
-  /** Diferencia sutil (Ágil) vs. clara y grande (Calmo). */
+  /** @deprecated Usa difficultyStep. */
   subtle: boolean
-  /** Rondas por sesión. */
+  /** Rondas por sesión (solo en modo 'rounds'). */
   rounds: number
+  /** 'rounds': N rondas clásicas (Calmo). 'time-attack': tiempo total fijo con score. */
+  sessionMode: 'rounds' | 'time-attack'
+  /** Duración total en segundos para time-attack (null = no aplica). */
+  sessionDurationSeconds: number | null
+  /** Dimensiones que puede variar el elemento diferente entre rondas. */
+  differDimensions: AttentionDiffDimension[]
+  /** Incremento de dificultad por acierto (0–1). 0 en Calmo. */
+  difficultyStep: number
 }
 
 export interface ModeActivities {

@@ -15,6 +15,7 @@ export interface NewSession {
   correct: number
   total: number
   score: number
+  durationMs?: number
 }
 
 /** Guarda una sesión terminada. */
@@ -22,9 +23,38 @@ export async function recordSession(s: NewSession): Promise<void> {
   const now = new Date()
   await db.sessions.add({
     ...s,
+    durationMs: s.durationMs ?? null,
     finishedAt: now.toISOString(),
     day: localDay(now),
   } as SessionRecord)
+}
+
+/** Mejor tiempo en ms para memoria con N parejas en el modo dado. Null si no hay historial. */
+export async function getBestMemoryTime(
+  mode: ModeId,
+  pairs: number,
+): Promise<number | null> {
+  const sessions = await db.sessions
+    .where('activity')
+    .equals('memory')
+    .and((s) => s.mode === mode && s.total === pairs && s.durationMs !== null)
+    .toArray()
+  if (sessions.length === 0) return null
+  return sessions.reduce(
+    (best, s) => Math.min(best, s.durationMs!),
+    Infinity,
+  )
+}
+
+/** Mejor puntaje de aciertos en atención time-attack para el modo dado. */
+export async function getBestAttentionScore(mode: ModeId): Promise<number | null> {
+  const sessions = await db.sessions
+    .where('activity')
+    .equals('attention')
+    .and((s) => s.mode === mode)
+    .toArray()
+  if (sessions.length === 0) return null
+  return sessions.reduce((best, s) => Math.max(best, s.correct), 0)
 }
 
 export interface OverallStats {
@@ -42,7 +72,6 @@ function computeStreak(days: Set<string>): number {
   const cursor = new Date()
   const has = (d: Date) => days.has(localDay(d))
 
-  // La racha sigue viva si hubo actividad hoy o ayer.
   if (!has(cursor)) {
     cursor.setDate(cursor.getDate() - 1)
     if (!has(cursor)) return 0

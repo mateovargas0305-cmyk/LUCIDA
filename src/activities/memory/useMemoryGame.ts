@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MemoryActivityConfig } from '../../modes/types'
 import { buildMemoryDeck, type MemoryCard } from './memoryEngine'
 
@@ -12,16 +12,36 @@ export interface MemoryGame {
   moves: number
   won: boolean
   restart: () => void
+  /** Tiempo transcurrido en ms desde la primera carta. 0 si showTimer es false o no inició. */
+  elapsedMs: number
 }
 
-/** Juego de parejas: voltear, comparar y, si no coinciden, ocultar tras una pausa. */
 export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
   const [cards, setCards] = useState<MemoryCard[]>(() => buildMemoryDeck(cfg))
   const [flipped, setFlipped] = useState<number[]>([])
   const [matched, setMatched] = useState<number[]>([])
   const [moves, setMoves] = useState(0)
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [elapsedMs, setElapsedMs] = useState(0)
+  const won = cards.length > 0 && matched.length === cards.length
 
-  // Al completar un par de cartas, decidir coincidencia (con pausa si fallan).
+  // Tick del cronómetro cada 200ms (suficiente para MM:SS).
+  useEffect(() => {
+    if (!cfg.showTimer || !startedAt || won) return
+    const id = setInterval(() => setElapsedMs(Date.now() - startedAt), 200)
+    return () => clearInterval(id)
+  }, [cfg.showTimer, startedAt, won])
+
+  // Capturar el ms exacto al ganar.
+  const prevWonRef = useRef(false)
+  useEffect(() => {
+    if (won && !prevWonRef.current && startedAt !== null) {
+      setElapsedMs(Date.now() - startedAt)
+    }
+    prevWonRef.current = won
+  }, [won, startedAt])
+
+  // Lógica de coincidencia de parejas.
   useEffect(() => {
     if (flipped.length !== 2) return
     const [a, b] = flipped
@@ -36,6 +56,10 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
 
   const flip = useCallback(
     (index: number) => {
+      // Iniciar cronómetro en la primera carta.
+      if (cfg.showTimer) {
+        setStartedAt((prev) => (prev === null ? Date.now() : prev))
+      }
       setFlipped((current) => {
         if (current.length >= 2) return current
         if (current.includes(index)) return current
@@ -43,7 +67,7 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
         return [...current, index]
       })
     },
-    [],
+    [cfg.showTimer],
   )
 
   const restart = useCallback(() => {
@@ -51,6 +75,9 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
     setFlipped([])
     setMatched([])
     setMoves(0)
+    setStartedAt(null)
+    setElapsedMs(0)
+    prevWonRef.current = false
   }, [cfg])
 
   return {
@@ -64,7 +91,8 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
     pairsFound: matched.length / 2,
     totalPairs: cfg.pairs,
     moves,
-    won: cards.length > 0 && matched.length === cards.length,
+    won,
     restart,
+    elapsedMs,
   }
 }

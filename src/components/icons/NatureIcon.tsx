@@ -96,5 +96,17 @@ export function NatureIcon({ id, size = 30 }: NatureIconProps) {
           <path d="M2 17c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0 5-3.5 7.5 0" />
         </svg>
       )
+    case 'bolt':
+      return (
+        <svg {...common} {...stroke} aria-hidden>
+          <path d="M13 2L4 14h8l-1 8 9-12h-8z" />
+        </svg>
+      )
+    case 'pine':
+      return (
+        <svg {...common} {...stroke} aria-hidden>
+          <path d="M12 2L7 9h3l-4 8h5v4h2v-4h5l-4-8h3z" />
+        </svg>
+      )
   }
 }

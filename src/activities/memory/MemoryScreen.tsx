@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { SessionSummary } from '../../components/SessionSummary'
@@ -6,6 +7,14 @@ import { useModeConfig } from '../../modes/modeContext'
 import { useNav } from '../../navigation/navContext'
 import { tpx } from '../../lib/typography'
 import { useMemoryGame } from './useMemoryGame'
+import { getBestMemoryTime } from '../../db/sessions'
+
+function formatTime(ms: number): string {
+  const total = Math.floor(ms / 1000)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 export function MemoryScreen() {
   const config = useModeConfig()
@@ -13,27 +22,60 @@ export function MemoryScreen() {
   const reduce = useReducedMotion()
   const memCfg = config.activities.memory
   const game = useMemoryGame(memCfg)
+  const [bestMs, setBestMs] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!memCfg.showTimer) return
+    void getBestMemoryTime(config.id, memCfg.pairs).then(setBestMs)
+  }, [memCfg.showTimer, config.id, memCfg.pairs])
 
   if (game.won) {
+    const isNewRecord =
+      memCfg.showTimer &&
+      game.elapsedMs > 0 &&
+      (bestMs === null || game.elapsedMs < bestMs)
+
     return (
       <SessionSummary
-        headline="¡Tablero completo!"
+        headline={isNewRecord ? '¡Nuevo récord!' : '¡Tablero completo!'}
         subline={
-          <>
-            {game.totalPairs} parejas en{' '}
-            <strong>{game.moves} movimientos</strong>.
-          </>
+          memCfg.showTimer ? (
+            <>
+              {game.totalPairs} parejas en{' '}
+              <strong>{formatTime(game.elapsedMs)}</strong>
+              {bestMs !== null && !isNewRecord && (
+                <> · récord: {formatTime(bestMs)}</>
+              )}
+            </>
+          ) : (
+            <>
+              {game.totalPairs} parejas en{' '}
+              <strong>{game.moves} movimientos</strong>.
+            </>
+          )
         }
-        stats={[
-          { label: 'Parejas', value: game.totalPairs, accent: 'sereno' },
-          { label: 'Movimientos', value: game.moves, accent: 'agil' },
-        ]}
+        stats={
+          memCfg.showTimer
+            ? [
+                { label: 'Tiempo', value: formatTime(game.elapsedMs), accent: 'agil' as const },
+                {
+                  label: isNewRecord ? '¡Récord!' : 'Récord anterior',
+                  value: bestMs !== null && !isNewRecord ? formatTime(bestMs) : '—',
+                  accent: 'sereno' as const,
+                },
+              ]
+            : [
+                { label: 'Parejas', value: game.totalPairs, accent: 'sereno' as const },
+                { label: 'Movimientos', value: game.moves, accent: 'agil' as const },
+              ]
+        }
         record={{
           activity: 'memory',
           mode: config.id,
           correct: game.totalPairs,
           total: game.totalPairs,
           score: game.pairsFound * config.scoring.pointsPerCorrect,
+          durationMs: memCfg.showTimer ? game.elapsedMs : undefined,
         }}
         onAgain={game.restart}
         onHome={back}
@@ -42,8 +84,9 @@ export function MemoryScreen() {
     )
   }
 
-  const big = !config.scoring.enabled // Calmo: cartas grandes, sin contadores
+  const big = !config.scoring.enabled
   const iconSize = big ? 60 : 30
+  const showLiveTimer = memCfg.showTimer && game.elapsedMs > 0
 
   return (
     <main
@@ -56,7 +99,7 @@ export function MemoryScreen() {
             className="font-serif font-semibold leading-snug text-ink-strong"
             style={{ fontSize: tpx(config.typography.headingPx) }}
           >
-            Buscá las dos parejas iguales
+            Buscá las parejas iguales
           </h1>
           <p
             className="mt-2 leading-relaxed text-ink-soft"
@@ -75,11 +118,25 @@ export function MemoryScreen() {
                 {game.pairsFound}/{game.totalPairs}
               </strong>
             </span>
-            <span className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-agil-soft py-2.5 text-[13px] font-bold text-agil-strong">
-              Movimientos
-              <strong className="font-serif text-[17px]">{game.moves}</strong>
-            </span>
+            {showLiveTimer ? (
+              <span className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-agil-soft py-2.5 text-[13px] font-bold text-agil-strong">
+                Tiempo
+                <strong className="font-serif text-[17px]">
+                  {formatTime(game.elapsedMs)}
+                </strong>
+              </span>
+            ) : (
+              <span className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-agil-soft py-2.5 text-[13px] font-bold text-agil-strong">
+                Movimientos
+                <strong className="font-serif text-[17px]">{game.moves}</strong>
+              </span>
+            )}
           </div>
+          {bestMs !== null && (
+            <p className="text-center text-[12px] font-bold text-ink-muted">
+              Récord: {formatTime(bestMs)}
+            </p>
+          )}
         </>
       )}
 

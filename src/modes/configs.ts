@@ -72,10 +72,11 @@ const agil: ModeConfig = {
       levelWeights: { alta: 3, media: 1, baja: 0 },
     },
     memory: {
-      // Grilla más grande: 5×4 = 20 cartas (10 parejas).
-      columns: 5,
-      pairs: 10,
+      // Grilla más grande: 4×6 = 24 cartas (12 parejas).
+      columns: 4,
+      pairs: 12,
       flipBackMs: 700,
+      showTimer: true,
     },
     calc: {
       operations: ['suma', 'resta', 'multiplicacion', 'secuencia', 'porcentaje'],
@@ -85,12 +86,15 @@ const agil: ModeConfig = {
       escalateWithinSession: true, // las últimas rondas son más exigentes
     },
     attention: {
-      // Grilla más grande: 24 elementos en 6 columnas.
-      items: 24,
-      columns: 6,
+      items: 16,
+      columns: 4,
       differBy: 'forma',
-      subtle: true,
-      rounds: 10,
+      subtle: false,
+      rounds: 0,
+      sessionMode: 'time-attack',
+      sessionDurationSeconds: 15,
+      differDimensions: ['color', 'forma', 'tamaño'],
+      difficultyStep: 0.12,
     },
   },
 }
@@ -158,6 +162,7 @@ const sereno: ModeConfig = {
       columns: 3,
       pairs: 6,
       flipBackMs: 900,
+      showTimer: true,
     },
     calc: {
       operations: ['suma', 'resta', 'multiplicacion'],
@@ -171,7 +176,11 @@ const sereno: ModeConfig = {
       columns: 3,
       differBy: 'forma',
       subtle: false,
-      rounds: 6,
+      rounds: 0,
+      sessionMode: 'time-attack',
+      sessionDurationSeconds: 25,
+      differDimensions: ['color', 'forma'],
+      difficultyStep: 0.08,
     },
   },
 }
@@ -246,6 +255,7 @@ const calmo: ModeConfig = {
       columns: 2,
       pairs: 2,
       flipBackMs: 1300,
+      showTimer: false, // regla sagrada: sin cronómetro en Calmo
     },
     calc: {
       operations: ['suma', 'resta'],
@@ -260,6 +270,10 @@ const calmo: ModeConfig = {
       differBy: 'color',
       subtle: false,
       rounds: 4,
+      sessionMode: 'rounds', // regla sagrada: sin tiempo en Calmo
+      sessionDurationSeconds: null,
+      differDimensions: ['color'],
+      difficultyStep: 0,
     },
   },
 }
