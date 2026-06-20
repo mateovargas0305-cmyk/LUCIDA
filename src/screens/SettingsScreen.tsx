@@ -1,0 +1,179 @@
+import { useEffect, useState } from 'react'
+import { ScreenHeader } from '../components/ui/ScreenHeader'
+import { useModeConfig } from '../modes/modeContext'
+import {
+  TEXT_SCALE_LABEL,
+  usePreferences,
+  type TextScaleId,
+} from '../preferences/preferencesContext'
+import { THEMES, type ThemeId } from '../theme/themes'
+import { tpx } from '../lib/typography'
+import {
+  clearHistory,
+  getOverallStats,
+  type OverallStats,
+} from '../db/sessions'
+
+const THEME_IDS = Object.keys(THEMES) as ThemeId[]
+const TEXT_SCALE_IDS: TextScaleId[] = ['normal', 'grande', 'mas-grande']
+
+/** Control segmentado accesible (radiogroup) para opciones cortas. */
+function Segmented<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  renderLabel,
+}: {
+  label: string
+  options: readonly T[]
+  value: T
+  onChange: (v: T) => void
+  renderLabel: (v: T) => string
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-[14px] font-bold text-ink-soft">{label}</div>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className="flex gap-2 rounded-2xl bg-surface p-1.5"
+      >
+        {options.map((opt) => {
+          const active = opt === value
+          return (
+            <button
+              key={opt}
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(opt)}
+              className={`flex-1 rounded-xl px-3 py-2.5 text-[14px] font-bold transition-colors ${
+                active
+                  ? 'bg-calmo text-calmo-ink shadow-card'
+                  : 'bg-transparent text-ink-soft'
+              }`}
+            >
+              {renderLabel(opt)}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function StatsBlock({ stats }: { stats: OverallStats }) {
+  const items = [
+    { label: 'Racha', value: `${stats.streakDays} días` },
+    { label: 'Sesiones', value: String(stats.totalSessions) },
+    { label: 'Aciertos', value: `${stats.totalCorrect}/${stats.totalAnswered}` },
+  ]
+  return (
+    <div className="flex gap-2.5">
+      {items.map((it) => (
+        <div
+          key={it.label}
+          className="flex-1 rounded-2xl border border-border bg-surface p-3 text-center"
+        >
+          <div className="font-serif text-[20px] font-bold text-ink-strong">
+            {it.value}
+          </div>
+          <div className="mt-0.5 text-[12px] font-bold text-ink-muted">
+            {it.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function SettingsScreen() {
+  const config = useModeConfig()
+  const prefs = usePreferences()
+  const [stats, setStats] = useState<OverallStats | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void getOverallStats().then((s) => alive && setStats(s))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const reset = async () => {
+    await clearHistory()
+    setStats(await getOverallStats())
+  }
+
+  return (
+    <main
+      className="flex flex-1 flex-col px-6 pb-10 pt-12"
+      style={{ rowGap: config.controls.blockGapPx }}
+    >
+      <ScreenHeader title="Ajustes" />
+
+      <section aria-label="Tu progreso">
+        <h2
+          className="mb-2.5 font-serif font-semibold text-ink-strong"
+          style={{ fontSize: tpx(19) }}
+        >
+          Tu progreso
+        </h2>
+        {stats ? (
+          <StatsBlock stats={stats} />
+        ) : (
+          <p className="text-[14px] text-ink-muted">Cargando…</p>
+        )}
+      </section>
+
+      <section aria-label="Preferencias" className="flex flex-col gap-5">
+        <Segmented
+          label="Tema de color"
+          options={THEME_IDS}
+          value={prefs.theme}
+          onChange={prefs.setTheme}
+          renderLabel={(id) => THEMES[id].name}
+        />
+
+        <Segmented
+          label="Tamaño del texto"
+          options={TEXT_SCALE_IDS}
+          value={prefs.textScale}
+          onChange={prefs.setTextScale}
+          renderLabel={(id) => TEXT_SCALE_LABEL[id]}
+        />
+
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-bold text-ink-soft">Sonido</div>
+            <div className="text-[13px] text-ink-muted">
+              Lectura por voz y avisos suaves.
+            </div>
+          </div>
+          <button
+            role="switch"
+            aria-checked={prefs.soundEnabled}
+            aria-label="Sonido"
+            onClick={() => prefs.setSoundEnabled(!prefs.soundEnabled)}
+            className={`relative h-9 w-16 flex-none rounded-pill transition-colors ${
+              prefs.soundEnabled ? 'bg-sereno' : 'bg-border-strong'
+            }`}
+          >
+            <span
+              className={`absolute top-1 h-7 w-7 rounded-full bg-surface shadow-card transition-[left] ${
+                prefs.soundEnabled ? 'left-8' : 'left-1'
+              }`}
+            />
+          </button>
+        </div>
+      </section>
+
+      <button
+        onClick={reset}
+        className="mt-auto min-h-12 rounded-2xl border border-border text-[14px] font-bold text-ink-muted"
+      >
+        Borrar historial
+      </button>
+    </main>
+  )
+}

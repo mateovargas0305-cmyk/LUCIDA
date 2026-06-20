@@ -1,0 +1,189 @@
+/**
+ * Capa central de configuración por modo.
+ *
+ * TODA actividad consume de acá. Prohibido dispersar lógica "si el modo es X…"
+ * por los componentes: si una actividad necesita un parámetro nuevo dependiente
+ * del modo, se agrega a estos tipos y a `configs.ts`, y recién después se usa.
+ */
+
+export type ModeId = 'agil' | 'sereno' | 'calmo'
+
+/** Token de color de acento asociado al modo (ver theme/tokens). */
+export type AccentToken = 'agil' | 'sereno' | 'calmo'
+
+export type Difficulty = 'baja' | 'media' | 'alta'
+
+/** Cómo se comunica un error al usuario. */
+export type ErrorFeedback =
+  | 'gamificado' // marca ✕, resta de racha, energía
+  | 'neutral' // se marca la correcta, sin dramatismo
+  | 'amable' // reorientación suave, sólo refuerzo positivo (Calmo)
+
+/** Energía de las animaciones (se traduce a transiciones de Framer Motion). */
+export type MotionEnergy = 'energico' | 'sereno' | 'minimo'
+
+/** Operaciones habilitadas en la actividad de cálculo. */
+export type CalcOperation =
+  | 'suma'
+  | 'resta'
+  | 'multiplicacion'
+  | 'secuencia'
+  | 'porcentaje'
+
+/** Qué distingue al elemento "diferente" en la actividad de atención. */
+export type AttentionDiffBy = 'color' | 'forma'
+
+/** Escala tipográfica en px. En Calmo, `base` nunca baja de 24 (regla sagrada). */
+export interface ModeTypography {
+  /** Texto base de cuerpo. */
+  baseTextPx: number
+  /** Titular principal de pantalla. */
+  headingPx: number
+  /** Texto dentro de opciones y botones. */
+  controlTextPx: number
+  /** Texto auxiliar / etiquetas. */
+  captionPx: number
+}
+
+/** Geometría y tamaño de controles táctiles. */
+export interface ModeControls {
+  /** Alto mínimo de botones primarios en px. Calmo ≥ 64 (sagrado). */
+  primaryButtonMinHeightPx: number
+  /** Alto/lado mínimo de cualquier target táctil en px. Calmo ≥ 64. */
+  tapTargetMinPx: number
+  /** Radio de tarjetas/botones (clave de `borderRadius` en Tailwind). */
+  radius: 'xl' | '2xl' | '3xl' | '4xl'
+  /** Espaciado vertical entre bloques, en px. */
+  blockGapPx: number
+}
+
+/** Reglas de puntaje y progreso. */
+export interface ModeScoring {
+  /** ¿Se muestra y acumula puntaje? Calmo: false. */
+  enabled: boolean
+  /** ¿Se muestra racha de días/aciertos? */
+  showStreak: boolean
+  /** ¿Se muestra barra de progreso de sesión? */
+  showProgressBar: boolean
+  /** ¿Puede el puntaje bajar por error? Calmo: nunca (y por defecto, nadie). */
+  allowNegative: boolean
+  /** Puntos por respuesta correcta (0 si `enabled` es false). */
+  pointsPerCorrect: number
+}
+
+/** Reglas de tiempo. Calmo: jamás temporizadores. */
+export interface ModeTiming {
+  /** ¿Se permiten temporizadores en este modo? Calmo: false (sagrado). */
+  timerAllowed: boolean
+  /** Segundos por pregunta cuando hay timer; null = sin límite. */
+  secondsPerQuestion: number | null
+}
+
+/** Cómo se da feedback de error y de acierto. */
+export interface ModeFeedback {
+  onError: ErrorFeedback
+  /** Mostrar una marca de error explícita (✕). Calmo: false. */
+  showErrorMark: boolean
+  /** Mensaje de reorientación ante error. */
+  errorMessage: string
+  /** Mensaje de refuerzo ante acierto. */
+  successMessage: string
+}
+
+/** Reglas de navegación y densidad de pantalla. */
+export interface ModeNavigation {
+  /** Una sola acción/decisión por pantalla. Calmo: true. */
+  oneActionPerScreen: boolean
+  /** Botón "Siguiente" siempre visible. Calmo: true. */
+  persistentNext: boolean
+  /** Permitir grilla de varias actividades a la vez en el inicio. */
+  multiColumnHome: boolean
+}
+
+// ── Configuración por actividad ────────────────────────────────────────────
+
+export interface QuizActivityConfig {
+  /** Cuántas opciones de respuesta mostrar. */
+  optionsToShow: number
+  /** Niveles de pregunta admitidos en este modo. */
+  levels: Difficulty[]
+  /** Mostrar la etiqueta de categoría sobre la pregunta. */
+  showCategoryTag: boolean
+  /** Preguntas por sesión. */
+  questionsPerSession: number
+  /** Opciones con letra (A/B/C/D) en vez de botones grandes. */
+  letteredOptions: boolean
+  /** Botón "Escuchar la pregunta" (lectura por voz). Calmo: true. */
+  showVoiceButton: boolean
+  /**
+   * Ante error, permitir reintentar sin bloquear (refuerzo positivo de Calmo).
+   * Si es false, la primera respuesta fija el resultado y revela la correcta.
+   */
+  retryOnError: boolean
+}
+
+export interface MemoryActivityConfig {
+  /** Columnas de la grilla. */
+  columns: number
+  /** Cantidad de parejas a encontrar. */
+  pairs: number
+  /** Ms que una pareja no coincidente queda visible antes de ocultarse. */
+  flipBackMs: number
+}
+
+export interface CalcActivityConfig {
+  /** Operaciones habilitadas. */
+  operations: CalcOperation[]
+  /** Cantidad de opciones de respuesta. */
+  optionCount: number
+  /** Operando máximo al generar problemas. */
+  maxOperand: number
+  /** Ejercicios por sesión (el cálculo es infinito; esto define una ronda). */
+  rounds: number
+}
+
+export interface AttentionActivityConfig {
+  /** Cantidad total de elementos en la grilla. */
+  items: number
+  /** Columnas de la grilla. */
+  columns: number
+  /** Qué distingue al diferente. */
+  differBy: AttentionDiffBy
+  /** Diferencia sutil (Ágil) vs. clara y grande (Calmo). */
+  subtle: boolean
+  /** Rondas por sesión. */
+  rounds: number
+}
+
+export interface ModeActivities {
+  quiz: QuizActivityConfig
+  memory: MemoryActivityConfig
+  calc: CalcActivityConfig
+  attention: AttentionActivityConfig
+}
+
+/** Identificador de actividad (para iterar el inicio y rutas). */
+export type ActivityId = keyof ModeActivities
+
+// ── Configuración completa del modo ─────────────────────────────────────────
+
+export interface ModeConfig {
+  id: ModeId
+  /** Nombre visible ("Ágil"). */
+  label: string
+  /** Frase corta bajo el nombre. */
+  tagline: string
+  /** Etiqueta breve ("Dinámico" / "Equilibrado" / "Accesible"). */
+  badge: string
+  /** Token de color de acento. */
+  accent: AccentToken
+  difficulty: Difficulty
+  typography: ModeTypography
+  controls: ModeControls
+  scoring: ModeScoring
+  timing: ModeTiming
+  feedback: ModeFeedback
+  navigation: ModeNavigation
+  motion: MotionEnergy
+  activities: ModeActivities
+}

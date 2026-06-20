@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --text-scale: 1;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: rgb(var(--c-canvas));
+    color: rgb(var(--c-ink));
+    font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: 'Spectral', Georgia, serif;
+    text-wrap: pretty;
+  }
+
+  /* Foco visible y cálido para navegación por teclado */
+  :focus-visible {
+    outline: 3px solid rgb(var(--c-calmo));
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  /* Targets táctiles cómodos en controles interactivos */
+  button {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  /* Textura de grano sutil, decorativa */
+  .bg-grain {
+    background-image: radial-gradient(
+      rgb(120 90 55 / 0.06) 1px,
+      transparent 1.5px
+    );
+    background-size: 10px 10px;
+  }
+}
+
+/* Respeto SAGRADO por prefers-reduced-motion: sin animaciones agresivas */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
