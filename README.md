@@ -1,5 +1,9 @@
 # Lúcida
 
+[![Deploy to GitHub Pages](https://github.com/mateovargas0305-cmyk/LUCIDA/actions/workflows/deploy.yml/badge.svg)](https://github.com/mateovargas0305-cmyk/LUCIDA/actions/workflows/deploy.yml)
+
+**▶ App en vivo: https://mateovargas0305-cmyk.github.io/LUCIDA/**
+
 App de estímulo mental y cultura general, **cálida, calma y accesible**, pensada
 para un rango amplísimo de personas: desde un adolescente hasta un adulto mayor
 con demencia. Es una **PWA local-first**: funciona offline, sin backend, sin
