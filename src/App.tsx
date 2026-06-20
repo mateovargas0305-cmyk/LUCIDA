@@ -12,6 +12,8 @@ import { MemoryScreen } from './activities/memory/MemoryScreen'
 import { AttentionScreen } from './activities/attention/AttentionScreen'
 import { SequenceScreen } from './activities/sequence/SequenceScreen'
 import { ChainedCalcScreen } from './activities/chained-calc/ChainedCalcScreen'
+import { StroopScreen } from './activities/stroop/StroopScreen'
+import { SymbolSpeedScreen } from './activities/symbol-speed/SymbolSpeedScreen'
 import type { ActivityId } from './modes/types'
 import { screenEnter } from './lib/motion'
 
@@ -33,7 +35,8 @@ function initialScreen(): Screen {
     if (start === 'settings') return { name: 'settings' }
     if (
       start === 'quiz' || start === 'calc' || start === 'memory' ||
-      start === 'attention' || start === 'sequence' || start === 'chainedCalc'
+      start === 'attention' || start === 'sequence' || start === 'chainedCalc' ||
+      start === 'stroop' || start === 'symbolSpeed'
     ) {
       return { name: 'activity', activity: start }
     }
@@ -70,6 +73,10 @@ function ActivityScreen({ activity }: { activity: ActivityId }) {
       return <SequenceScreen />
     case 'chainedCalc':
       return <ChainedCalcScreen />
+    case 'stroop':
+      return <StroopScreen />
+    case 'symbolSpeed':
+      return <SymbolSpeedScreen />
   }
 }
 

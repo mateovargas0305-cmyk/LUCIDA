@@ -32,4 +32,6 @@ export const ACTIVITY_LABELS: Record<ActivityId, string> = {
   attention: 'Atención',
   sequence: 'Secuencias',
   chainedCalc: 'Cálculo encadenado',
+  stroop: 'Stroop',
+  symbolSpeed: 'Velocidad de símbolos',
 }

@@ -221,6 +221,28 @@ export interface ChainedCalcActivityConfig {
   escalateWithinSession: boolean
 }
 
+export interface StroopActivityConfig {
+  rounds: number
+  /**
+   * Fracción de ensayos incongruentes (tinta ≠ palabra). 0 = siempre congruente
+   * (Calmo, sin interferencia); 1 = siempre incongruente (máxima interferencia).
+   */
+  incongruencyRate: number
+  /** Cuántos colores distintos (2–4). */
+  colorCount: number
+  /**
+   * Mostrar botones de opción con su propio color de fondo para ayudar al
+   * reconocimiento. Calmo: true. Ágil/Sereno: false (no dar pistas visuales).
+   */
+  coloredOptionButtons: boolean
+}
+
+export interface SymbolSpeedActivityConfig {
+  rounds: number
+  /** Cuántos símbolos distintos en la clave de referencia (3–6). */
+  symbolCount: number
+}
+
 export interface ModeActivities {
   quiz: QuizActivityConfig
   memory: MemoryActivityConfig
@@ -228,6 +250,8 @@ export interface ModeActivities {
   attention: AttentionActivityConfig
   sequence: SequenceActivityConfig
   chainedCalc: ChainedCalcActivityConfig
+  stroop: StroopActivityConfig
+  symbolSpeed: SymbolSpeedActivityConfig
 }
 
 /** Identificador de actividad (para iterar el inicio y rutas). */

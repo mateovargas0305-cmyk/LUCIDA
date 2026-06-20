@@ -112,6 +112,18 @@ const agil: ModeConfig = {
       showIntermediateResults: false,
       escalateWithinSession: true,
     },
+    stroop: {
+      // Interferencia clásica: casi siempre incongruente, sin ayuda visual.
+      rounds: 12,
+      incongruencyRate: 0.85,
+      colorCount: 4,
+      coloredOptionButtons: false,
+    },
+    symbolSpeed: {
+      // Tabla máxima de 6 símbolos, más rondas para presión de velocidad.
+      rounds: 15,
+      symbolCount: 6,
+    },
   },
 }
 
@@ -213,6 +225,17 @@ const sereno: ModeConfig = {
       rounds: 8,
       showIntermediateResults: true,
       escalateWithinSession: false,
+    },
+    stroop: {
+      // Interferencia media: mezcla de congruente e incongruente.
+      rounds: 10,
+      incongruencyRate: 0.5,
+      colorCount: 4,
+      coloredOptionButtons: false,
+    },
+    symbolSpeed: {
+      rounds: 10,
+      symbolCount: 5,
     },
   },
 }
@@ -324,6 +347,18 @@ const calmo: ModeConfig = {
       rounds: 5,
       showIntermediateResults: true,
       escalateWithinSession: false,
+    },
+    stroop: {
+      // Regla sagrada: sin interferencia (siempre congruente), botones coloreados.
+      rounds: 6,
+      incongruencyRate: 0,
+      colorCount: 3,
+      coloredOptionButtons: true,
+    },
+    symbolSpeed: {
+      // Regla sagrada: tabla chica, pocas rondas.
+      rounds: 6,
+      symbolCount: 3,
     },
   },
 }

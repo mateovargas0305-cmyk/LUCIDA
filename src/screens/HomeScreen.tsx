@@ -13,6 +13,8 @@ const ACTIVITY_ORDER: readonly ActivityId[] = [
   'attention',
   'sequence',
   'chainedCalc',
+  'stroop',
+  'symbolSpeed',
 ]
 
 const ACTIVITY_HINT: Record<ActivityId, string> = {
@@ -22,6 +24,8 @@ const ACTIVITY_HINT: Record<ActivityId, string> = {
   attention: 'Descubrí el diferente.',
   sequence: 'Repetí la secuencia de colores.',
   chainedCalc: 'Calculá paso a paso la cadena.',
+  stroop: 'Identificá el color de la tinta.',
+  symbolSpeed: 'Asociá cada símbolo con su código.',
 }
 
 function ActivityGlyph({ id }: { id: ActivityId }) {
@@ -75,6 +79,21 @@ function ActivityGlyph({ id }: { id: ActivityId }) {
           <rect x="10" y="9" width="4" height="6" rx="1" />
           <path d="M14 12h2" />
           <circle cx="19" cy="12" r="3" />
+        </svg>
+      )
+    case 'stroop':
+      return (
+        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          <path d="M4 18L8 6l4 12" />
+          <path d="M5.5 14h5" />
+          <path d="M14 6v12" />
+          <path d="M14 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0" />
+        </svg>
+      )
+    case 'symbolSpeed':
+      return (
+        <svg viewBox="0 0 24 24" className={common} fill="currentColor" aria-hidden>
+          <polygon points="12,3 14.5,9 21,9 16,13.5 18,20 12,16 6,20 8,13.5 3,9 9.5,9" />
         </svg>
       )
   }
