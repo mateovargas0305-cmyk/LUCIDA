@@ -57,6 +57,20 @@ export async function getBestAttentionScore(mode: ModeId): Promise<number | null
   return sessions.reduce((best, s) => Math.max(best, s.correct), 0)
 }
 
+/** Mejor puntaje de aciertos en symbol speed time-attack, para la duración dada. */
+export async function getBestSymbolSpeedScore(
+  mode: ModeId,
+  durationSeconds: number,
+): Promise<number | null> {
+  const sessions = await db.sessions
+    .where('activity')
+    .equals('symbolSpeed')
+    .and((s) => s.mode === mode && s.total === durationSeconds)
+    .toArray()
+  if (sessions.length === 0) return null
+  return sessions.reduce((best, s) => Math.max(best, s.correct), 0)
+}
+
 export interface OverallStats {
   totalSessions: number
   totalCorrect: number

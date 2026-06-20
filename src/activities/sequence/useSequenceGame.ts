@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import type { SequenceActivityConfig } from '../../modes/types'
-import { buildSequence, type SequenceColor } from './sequenceEngine'
+import { buildSequence, type GameColorIndex } from './sequenceEngine'
 
 export type SequencePhase =
   | 'intro'    // esperando que el usuario empiece
@@ -12,8 +12,8 @@ export type SequencePhase =
 
 interface State {
   phase: SequencePhase
-  sequence: SequenceColor[]
-  userInput: SequenceColor[]
+  sequence: GameColorIndex[]
+  userInput: GameColorIndex[]
   /** Índice del botón iluminado durante la reproducción. null = ninguno. */
   highlightIndex: number | null
   length: number
@@ -25,7 +25,7 @@ type Action =
   | { type: 'start_playback' }
   | { type: 'set_highlight'; index: number | null }
   | { type: 'begin_input' }
-  | { type: 'tap'; color: SequenceColor; pointsPerCorrect: number }
+  | { type: 'tap'; color: GameColorIndex; pointsPerCorrect: number }
   | { type: 'next_round'; cfg: SequenceActivityConfig }
   | { type: 'error' }
   | { type: 'retry' }
@@ -92,8 +92,8 @@ function reducer(state: State, action: Action): State {
 
 export interface SequenceGame {
   phase: SequencePhase
-  sequence: SequenceColor[]
-  userInput: SequenceColor[]
+  sequence: GameColorIndex[]
+  userInput: GameColorIndex[]
   highlightIndex: number | null
   length: number
   roundsWon: number
@@ -101,7 +101,7 @@ export interface SequenceGame {
   /** Cuántos botones de la secuencia actual ya se ingresaron correctamente. */
   inputProgress: number
   start: () => void
-  tap: (color: SequenceColor) => void
+  tap: (color: GameColorIndex) => void
   restart: () => void
 }
 
@@ -111,7 +111,7 @@ export function useSequenceGame(
 ): SequenceGame {
   const [state, dispatch] = useReducer(reducer, cfg, makeInitial)
 
-  // Reproducir la secuencia cuando la fase es 'playing' o 'retry' pasa a 'playing'.
+  // Reproducir la secuencia cuando la fase es 'playing'.
   useEffect(() => {
     if (state.phase !== 'playing') return
     let cancelled = false
@@ -155,14 +155,12 @@ export function useSequenceGame(
   }, [])
 
   const tap = useCallback(
-    (color: SequenceColor) => {
+    (color: GameColorIndex) => {
       if (state.phase !== 'input') return
       const expected = state.sequence[state.userInput.length]
       if (color !== expected) {
-        // Error
         if (cfg.retryOnError) {
           dispatch({ type: 'error' })
-          // Retry tras 1.5s
           setTimeout(() => dispatch({ type: 'retry' }), 1500)
         } else {
           dispatch({ type: 'error' })

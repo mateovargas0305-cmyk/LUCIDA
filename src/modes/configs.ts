@@ -120,9 +120,10 @@ const agil: ModeConfig = {
       coloredOptionButtons: false,
     },
     symbolSpeed: {
-      // Tabla máxima de 6 símbolos, más rondas para presión de velocidad.
       rounds: 15,
-      symbolCount: 6,
+      symbolCount: 10,
+      sessionMode: 'time-attack',
+      defaultDurationSeconds: 30,
     },
   },
 }
@@ -236,6 +237,8 @@ const sereno: ModeConfig = {
     symbolSpeed: {
       rounds: 10,
       symbolCount: 5,
+      sessionMode: 'time-attack',
+      defaultDurationSeconds: 45,
     },
   },
 }
@@ -356,9 +359,11 @@ const calmo: ModeConfig = {
       coloredOptionButtons: true,
     },
     symbolSpeed: {
-      // Regla sagrada: tabla chica, pocas rondas.
+      // Regla sagrada: tabla chica, pocas rondas, sin temporizador.
       rounds: 6,
       symbolCount: 3,
+      sessionMode: 'rounds',
+      defaultDurationSeconds: null,
     },
   },
 }

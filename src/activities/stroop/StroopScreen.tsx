@@ -15,6 +15,7 @@ import {
   COLOR_TEXT_CLASS,
   COLOR_BUTTON_CLASS,
   type StroopTrial,
+  type StroopColorSlot,
 } from './stroopEngine'
 
 type OptionStatus = 'idle' | 'correct' | 'wrongChosen' | 'dimmed'
@@ -183,13 +184,16 @@ export function StroopScreen() {
       )}
 
       {/* La palabra Stroop: texto en color de tinta */}
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center overflow-hidden">
         <span
-          className={`select-none font-serif font-bold leading-none ${COLOR_TEXT_CLASS[trial.inkId]}`}
-          style={{ fontSize: big ? tpx(72) : tpx(64) }}
-          aria-label={`La palabra "${COLOR_NAME[trial.wordId]}" escrita en color ${COLOR_NAME[trial.inkId]}`}
+          className={`select-none font-serif font-bold leading-none ${COLOR_TEXT_CLASS[trial.inkSlot]}`}
+          style={{
+            fontSize: 'clamp(2rem, 10vw, 4.5rem)',
+            whiteSpace: 'nowrap',
+          }}
+          aria-label={`La palabra "${COLOR_NAME[trial.wordSlot]}" escrita en color ${COLOR_NAME[trial.inkSlot]}`}
         >
-          {COLOR_NAME[trial.wordId].toUpperCase()}
+          {COLOR_NAME[trial.wordSlot].toUpperCase()}
         </span>
       </div>
 
@@ -197,23 +201,23 @@ export function StroopScreen() {
       <ul
         className={big ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-3'}
       >
-        {trial.optionIds.map((colorId, i) => {
+        {trial.optionSlots.map((colorSlot: StroopColorSlot, i) => {
           const status = statusOf(i)
           const isCorrect = status === 'correct'
           const isWrong = status === 'wrongChosen'
           const baseClass = stroopCfg.coloredOptionButtons
-            ? COLOR_BUTTON_CLASS[colorId]
+            ? COLOR_BUTTON_CLASS[colorSlot]
             : 'bg-surface border-border text-ink-strong'
           const stateOverride = isCorrect
             ? 'bg-positive-soft border-positive text-positive-ink'
             : isWrong
-              ? 'bg-calmo-soft border-calmo text-calmo-strong'
+              ? 'bg-game-1 border-game-1-strong text-game-1-ink'
               : status === 'dimmed'
                 ? 'opacity-50'
                 : ''
 
           return (
-            <li key={colorId}>
+            <li key={colorSlot}>
               <motion.button
                 onClick={() => handleSelect(i)}
                 disabled={session.locked}
@@ -228,7 +232,7 @@ export function StroopScreen() {
                   ),
                 }}
               >
-                {COLOR_NAME[colorId]}
+                {COLOR_NAME[colorSlot]}
                 {isCorrect && (
                   <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-positive text-[18px] text-surface" aria-hidden>
                     ✓
@@ -252,9 +256,9 @@ export function StroopScreen() {
 
         {session.locked &&
           (session.timedOut ? (
-            <p className="text-center text-[15px] font-bold text-calmo-strong">
+            <p className="text-center text-[15px] font-bold text-game-1-strong">
               Tiempo agotado. Era{' '}
-              <span className="text-positive">{COLOR_NAME[trial.inkId]}</span>.
+              <span className="text-positive">{COLOR_NAME[trial.inkSlot]}</span>.
             </p>
           ) : big ? (
             <FeedbackBanner
@@ -270,12 +274,12 @@ export function StroopScreen() {
           ) : (
             <p
               className={`text-center text-[15px] font-bold ${
-                answeredCorrectly ? 'text-positive' : 'text-calmo-strong'
+                answeredCorrectly ? 'text-positive' : 'text-game-1-strong'
               }`}
             >
               {answeredCorrectly
                 ? `${config.feedback.successMessage}${config.scoring.enabled ? ` +${config.scoring.pointsPerCorrect} pts${bonusSuffix}` : ''}`
-                : `Era ${COLOR_NAME[trial.inkId]}. ${config.feedback.errorMessage}`}
+                : `Era ${COLOR_NAME[trial.inkSlot]}. ${config.feedback.errorMessage}`}
             </p>
           ))}
 

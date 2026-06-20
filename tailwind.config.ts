@@ -62,6 +62,15 @@ export default {
           soft: withVar('--c-gentle-soft'),
           ink: withVar('--c-gentle-ink'),
         },
+        // Game colors — perceptualmente distintos para juegos (Secuencias, Stroop, etc.)
+        game: {
+          '1': { DEFAULT: withVar('--gx-1'), ink: withVar('--gx-1-ink'), strong: withVar('--gx-1-strong') },
+          '2': { DEFAULT: withVar('--gx-2'), ink: withVar('--gx-2-ink'), strong: withVar('--gx-2-strong') },
+          '3': { DEFAULT: withVar('--gx-3'), ink: withVar('--gx-3-ink'), strong: withVar('--gx-3-strong') },
+          '4': { DEFAULT: withVar('--gx-4'), ink: withVar('--gx-4-ink'), strong: withVar('--gx-4-strong') },
+          '5': { DEFAULT: withVar('--gx-5'), ink: withVar('--gx-5-ink'), strong: withVar('--gx-5-strong') },
+          '6': { DEFAULT: withVar('--gx-6'), ink: withVar('--gx-6-ink'), strong: withVar('--gx-6-strong') },
+        },
       },
       fontFamily: {
         serif: ['Spectral', 'Georgia', 'serif'],

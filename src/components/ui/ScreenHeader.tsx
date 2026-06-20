@@ -1,3 +1,4 @@
+import { ChevronLeft } from 'lucide-react'
 import { useNav } from '../../navigation/navContext'
 
 interface ScreenHeaderProps {
@@ -15,9 +16,9 @@ export function ScreenHeader({ title, right }: ScreenHeaderProps) {
         <button
           onClick={back}
           aria-label="Volver"
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-[24px] leading-none text-ink-muted"
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-full text-ink-muted"
         >
-          ‹
+          <ChevronLeft size={24} aria-hidden />
         </button>
       ) : (
         <span className="h-10 w-10 flex-none" />

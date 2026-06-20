@@ -2,7 +2,7 @@ import type { SymbolSpeedActivityConfig } from '../../modes/types'
 import { shuffled, sampleN } from '../../lib/shuffle'
 
 /** Símbolos geométricos Unicode claramente distinguibles entre sí. */
-export const ALL_SYMBOLS = ['★', '●', '▲', '■', '♥', '✦'] as const
+export const ALL_SYMBOLS = ['★', '●', '▲', '■', '♥', '✦', '◆', '♣', '♠', '✿'] as const
 export type SymbolChar = (typeof ALL_SYMBOLS)[number]
 
 export interface SymbolKey {

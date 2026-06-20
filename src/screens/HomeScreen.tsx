@@ -1,4 +1,16 @@
 import { motion, useReducedMotion } from 'framer-motion'
+import {
+  BookOpen,
+  Hash,
+  LayoutGrid,
+  Eye,
+  Music2,
+  Link2,
+  Type,
+  Zap,
+  Settings,
+  ArrowLeftRight,
+} from 'lucide-react'
 import { Logo } from '../components/Logo'
 import { useMode } from '../modes/modeContext'
 import { ACTIVITY_LABELS, useNav } from '../navigation/navContext'
@@ -29,73 +41,16 @@ const ACTIVITY_HINT: Record<ActivityId, string> = {
 }
 
 function ActivityGlyph({ id }: { id: ActivityId }) {
-  const common = 'h-7 w-7'
+  const iconProps = { size: 26, 'aria-hidden': true } as const
   switch (id) {
-    case 'quiz':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7" />
-          <circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />
-        </svg>
-      )
-    case 'calc':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          <path d="M5 8h6M8 5v6M14 7h5M14 17h5M14.5 14.5l4 5M18.5 14.5l-4 5" />
-        </svg>
-      )
-    case 'memory':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" aria-hidden>
-          <rect x="4" y="4" width="7" height="7" rx="2" />
-          <rect x="13" y="4" width="7" height="7" rx="2" />
-          <rect x="4" y="13" width="7" height="7" rx="2" />
-          <rect x="13" y="13" width="7" height="7" rx="2" />
-        </svg>
-      )
-    case 'attention':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-          <circle cx="7" cy="7" r="2.5" />
-          <circle cx="17" cy="7" r="2.5" />
-          <circle cx="7" cy="17" r="2.5" />
-          <circle cx="17" cy="17" r="2.5" fill="currentColor" />
-        </svg>
-      )
-    case 'sequence':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          <rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.4} />
-          <rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor" />
-          <rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.6} />
-          <rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.2} />
-        </svg>
-      )
-    case 'chainedCalc':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          <circle cx="5" cy="12" r="3" />
-          <path d="M8 12h2" />
-          <rect x="10" y="9" width="4" height="6" rx="1" />
-          <path d="M14 12h2" />
-          <circle cx="19" cy="12" r="3" />
-        </svg>
-      )
-    case 'stroop':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-          <path d="M4 18L8 6l4 12" />
-          <path d="M5.5 14h5" />
-          <path d="M14 6v12" />
-          <path d="M14 10c0-2 6-2 6 0s-6 2-6 4 6 2 6 0" />
-        </svg>
-      )
-    case 'symbolSpeed':
-      return (
-        <svg viewBox="0 0 24 24" className={common} fill="currentColor" aria-hidden>
-          <polygon points="12,3 14.5,9 21,9 16,13.5 18,20 12,16 6,20 8,13.5 3,9 9.5,9" />
-        </svg>
-      )
+    case 'quiz':        return <BookOpen {...iconProps} />
+    case 'calc':        return <Hash {...iconProps} />
+    case 'memory':      return <LayoutGrid {...iconProps} />
+    case 'attention':   return <Eye {...iconProps} />
+    case 'sequence':    return <Music2 {...iconProps} />
+    case 'chainedCalc': return <Link2 {...iconProps} />
+    case 'stroop':      return <Type {...iconProps} />
+    case 'symbolSpeed': return <Zap {...iconProps} />
   }
 }
 
@@ -122,17 +77,14 @@ export function HomeScreen() {
             className={`flex items-center gap-2 rounded-pill ${accent.softBg} ${accent.strongText} px-3.5 py-1.5 text-[13px] font-bold`}
           >
             Modo {config.label}
-            <span aria-hidden>⇄</span>
+            <ArrowLeftRight size={14} aria-hidden />
           </button>
           <button
             onClick={() => navigate({ name: 'settings' })}
             aria-label="Ajustes"
             className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-surface text-ink-soft shadow-soft"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.3a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.3 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2 1.7 1.7 0 0 0-.3 1.9l.1.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V12a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-            </svg>
+            <Settings size={18} aria-hidden />
           </button>
         </div>
       </header>

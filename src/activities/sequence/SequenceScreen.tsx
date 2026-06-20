@@ -8,18 +8,12 @@ import { useNav } from '../../navigation/navContext'
 import { tpx } from '../../lib/typography'
 import { useSequenceGame } from './useSequenceGame'
 import {
-  SEQUENCE_COLORS,
+  getSequenceColors,
   COLOR_BG,
   COLOR_HIGHLIGHT,
-  type SequenceColor,
+  COLOR_LABEL,
+  type GameColorIndex,
 } from './sequenceEngine'
-
-const COLOR_LABEL: Record<SequenceColor, string> = {
-  agil: 'ámbar',
-  sereno: 'verde',
-  calmo: 'terracota',
-  positive: 'lima',
-}
 
 export function SequenceScreen() {
   const config = useModeConfig()
@@ -58,14 +52,14 @@ export function SequenceScreen() {
   }
 
   const big = !config.scoring.enabled
-  const colors = SEQUENCE_COLORS.slice(0, seqCfg.colorCount) as SequenceColor[]
+  const colors = getSequenceColors(seqCfg.colorCount)
   const isPlaying = game.phase === 'playing'
   const isInput = game.phase === 'input'
   const isSuccess = game.phase === 'success'
   const isError = game.phase === 'error'
 
-  // Grilla de botones: 1 columna en Calmo, 2×2 en Ágil/Sereno.
-  const useGrid = colors.length === 4
+  // Grilla de botones: 1 columna en Calmo (3 colores), 2×2 en Ágil/Sereno (4 colores).
+  const useGrid = colors.length >= 4
 
   return (
     <main
@@ -120,7 +114,7 @@ export function SequenceScreen() {
             ))}
           </div>
           <p className="text-center font-serif text-[20px] font-semibold text-ink-strong">
-            {isPlaying ? 'Mirá...' : isInput ? '¿Cuál era el orden?' : ' '}
+            {isPlaying ? 'Mirá...' : isInput ? '¿Cuál era el orden?' : ' '}
           </p>
         </>
       )}
@@ -147,18 +141,18 @@ export function SequenceScreen() {
             : 'flex flex-1 flex-col content-center justify-center gap-3'
         }
       >
-        {colors.map((color) => {
+        {colors.map((colorIdx: GameColorIndex) => {
           const isHighlighted = game.highlightIndex !== null
-            ? game.sequence[game.highlightIndex] === color && isPlaying
+            ? game.sequence[game.highlightIndex] === colorIdx && isPlaying
             : false
           const colorClass = isHighlighted
-            ? COLOR_HIGHLIGHT[color]
-            : COLOR_BG[color]
+            ? COLOR_HIGHLIGHT[colorIdx]
+            : COLOR_BG[colorIdx]
 
           return (
-            <li key={color} className={useGrid ? '' : 'mx-auto w-full max-w-xs'}>
+            <li key={colorIdx} className={useGrid ? '' : 'mx-auto w-full max-w-xs'}>
               <motion.button
-                onClick={() => game.tap(color)}
+                onClick={() => game.tap(colorIdx)}
                 disabled={!isInput}
                 animate={
                   reduce
@@ -166,7 +160,7 @@ export function SequenceScreen() {
                     : { scale: isHighlighted ? 1.06 : 1, opacity: isPlaying && !isHighlighted ? 0.55 : 1 }
                 }
                 transition={{ duration: 0.12 }}
-                aria-label={`Color ${COLOR_LABEL[color]}`}
+                aria-label={`Color ${COLOR_LABEL[colorIdx]}`}
                 aria-pressed={isHighlighted}
                 className={`w-full rounded-3xl border-2 border-transparent transition-all ${colorClass}`}
                 style={{

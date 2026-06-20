@@ -239,8 +239,12 @@ export interface StroopActivityConfig {
 
 export interface SymbolSpeedActivityConfig {
   rounds: number
-  /** Cuántos símbolos distintos en la clave de referencia (3–6). */
+  /** Cuántos símbolos distintos en la clave de referencia (3–10). */
   symbolCount: number
+  /** 'rounds': formato clásico (Calmo). 'time-attack': tiempo total con score (Ágil/Sereno). */
+  sessionMode: 'rounds' | 'time-attack'
+  /** Duración por defecto del selector de tiempo en segundos (null en modo rounds). */
+  defaultDurationSeconds: number | null
 }
 
 export interface ModeActivities {
