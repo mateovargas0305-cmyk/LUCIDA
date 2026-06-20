@@ -8,6 +8,8 @@ export type NatureIconId =
   | 'mountain'
   | 'heart'
   | 'star'
+  | 'cloud'
+  | 'wave'
 
 export const NATURE_ICON_IDS: readonly NatureIconId[] = [
   'sun',
@@ -18,4 +20,6 @@ export const NATURE_ICON_IDS: readonly NatureIconId[] = [
   'mountain',
   'heart',
   'star',
+  'cloud',
+  'wave',
 ]

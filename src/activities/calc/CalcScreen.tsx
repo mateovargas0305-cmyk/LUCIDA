@@ -1,13 +1,15 @@
+import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { CountdownTimer } from '../../components/ui/CountdownTimer'
 import { SessionSummary } from '../../components/SessionSummary'
 import { useModeConfig } from '../../modes/modeContext'
 import { useNav } from '../../navigation/navContext'
 import { useChoiceSession } from '../shared/useChoiceSession'
 import { tpx } from '../../lib/typography'
-import { generateCalcProblem, type CalcProblem } from './calcEngine'
+import { generateCalcProblems, type CalcProblem } from './calcEngine'
 
 type OptionStatus = 'idle' | 'correct' | 'wrongChosen' | 'dimmed'
 
@@ -25,15 +27,26 @@ export function CalcScreen() {
   const calcCfg = config.activities.calc
 
   const session = useChoiceSession<CalcProblem>({
-    build: () =>
-      Array.from({ length: calcCfg.rounds }, () =>
-        generateCalcProblem(calcCfg),
-      ),
+    build: () => generateCalcProblems(calcCfg),
     retryOnError: config.activities.quiz.retryOnError,
-    pointsPerCorrect: config.scoring.enabled
-      ? config.scoring.pointsPerCorrect
-      : 0,
+    pointsPerCorrect: config.scoring.enabled ? config.scoring.pointsPerCorrect : 0,
+    streakBonusEnabled: config.scoring.streakBonusEnabled,
+    streakBonusThreshold: config.scoring.streakBonusThreshold,
+    streakBonusPoints: config.scoring.streakBonusPoints,
   })
+
+  const questionStartRef = useRef(Date.now())
+  const sessionIndex = session.index
+  useEffect(() => {
+    questionStartRef.current = Date.now()
+  }, [sessionIndex])
+
+  const { timedOut, next } = session
+  useEffect(() => {
+    if (!timedOut) return
+    const id = setTimeout(() => next(), 1300)
+    return () => clearTimeout(id)
+  }, [timedOut, next])
 
   if (session.finished) {
     return (
@@ -70,11 +83,13 @@ export function CalcScreen() {
   }
 
   const problem = session.current
-  const big = calcCfg.optionCount <= 3 // Calmo: pocas opciones, grandes
+  const big = calcCfg.optionCount <= 3
   const isLast = session.index >= session.total - 1
   const exprFont = Math.round(config.typography.headingPx * 1.8)
+  const showTimer =
+    config.timing.timerAllowed && config.timing.secondsPerQuestion !== null
   const answeredCorrectly =
-    session.locked && session.selected === problem.correctIndex
+    session.locked && !session.timedOut && session.selected === problem.correctIndex
 
   const statusOf = (i: number): OptionStatus => {
     if (!session.locked) return 'idle'
@@ -82,6 +97,21 @@ export function CalcScreen() {
     if (i === session.selected) return 'wrongChosen'
     return 'dimmed'
   }
+
+  const handleSelect = (i: number) => {
+    const elapsed = Date.now() - questionStartRef.current
+    const secs = config.timing.secondsPerQuestion
+    const speedBonus =
+      config.scoring.speedBonusEnabled &&
+      secs !== null &&
+      elapsed < secs * config.scoring.speedBonusThresholdPct * 1000
+        ? config.scoring.speedBonusPoints
+        : 0
+    session.select(i, speedBonus)
+  }
+
+  const bonusSuffix =
+    answeredCorrectly && session.lastBonus ? ` · +${session.lastBonus} bonus` : ''
 
   return (
     <main
@@ -92,10 +122,17 @@ export function CalcScreen() {
         title="Cálculo"
         right={
           config.scoring.enabled ? (
-            <span className="flex items-center gap-2 rounded-pill bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
-              <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
-              {session.score}
-            </span>
+            <div className="flex items-center gap-2">
+              {session.currentStreak >= 3 && (
+                <span className="rounded-pill bg-agil px-2.5 py-1 text-[12px] font-bold text-surface">
+                  Racha {session.currentStreak}
+                </span>
+              )}
+              <span className="flex items-center gap-2 rounded-pill bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+                <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+                {session.score}
+              </span>
+            </div>
           ) : undefined
         }
       />
@@ -112,6 +149,15 @@ export function CalcScreen() {
             {session.index + 1}/{session.total}
           </span>
         </div>
+      )}
+
+      {showTimer && (
+        <CountdownTimer
+          totalSeconds={config.timing.secondsPerQuestion!}
+          questionKey={session.index}
+          onExpire={session.timeout}
+          paused={session.locked}
+        />
       )}
 
       {/* Operación */}
@@ -141,7 +187,7 @@ export function CalcScreen() {
           return (
             <li key={i}>
               <motion.button
-                onClick={() => session.select(i)}
+                onClick={() => handleSelect(i)}
                 disabled={session.locked}
                 whileTap={reduce || session.locked ? undefined : { scale: 0.98 }}
                 className={`flex w-full items-center justify-center gap-3 border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]} ${
@@ -187,7 +233,12 @@ export function CalcScreen() {
         )}
 
         {session.locked &&
-          (big ? (
+          (session.timedOut ? (
+            <p className="text-center text-[15px] font-bold text-calmo-strong">
+              Tiempo agotado. La respuesta era{' '}
+              <span className="text-positive">{problem.answer}</span>.
+            </p>
+          ) : big ? (
             <FeedbackBanner
               variant={answeredCorrectly ? 'success' : 'gentle'}
               message={
@@ -207,24 +258,25 @@ export function CalcScreen() {
               {answeredCorrectly
                 ? `${config.feedback.successMessage}${
                     config.scoring.enabled
-                      ? ` +${config.scoring.pointsPerCorrect} puntos`
+                      ? ` +${config.scoring.pointsPerCorrect} pts${bonusSuffix}`
                       : ''
                   }`
                 : `Era ${problem.answer}. ${config.feedback.errorMessage}`}
             </p>
           ))}
 
-        {(() => {
-          const showNext = big
-            ? session.locked
-            : config.navigation.persistentNext || session.locked
-          if (!showNext) return null
-          return (
-            <PrimaryButton onClick={session.next} disabled={!session.locked}>
-              {isLast ? 'Ver resultado' : 'Siguiente'} ›
-            </PrimaryButton>
-          )
-        })()}
+        {!session.timedOut &&
+          (() => {
+            const showNext = big
+              ? session.locked
+              : config.navigation.persistentNext || session.locked
+            if (!showNext) return null
+            return (
+              <PrimaryButton onClick={session.next} disabled={!session.locked}>
+                {isLast ? 'Ver resultado' : 'Siguiente'} ›
+              </PrimaryButton>
+            )
+          })()}
       </div>
     </main>
   )

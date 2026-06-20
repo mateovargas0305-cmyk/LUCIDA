@@ -34,10 +34,18 @@ const agil: ModeConfig = {
     showProgressBar: true,
     allowNegative: false,
     pointsPerCorrect: 40,
+    // Racha: ≥3 aciertos seguidos suman bonus.
+    streakBonusEnabled: true,
+    streakBonusThreshold: 3,
+    streakBonusPoints: 20,
+    // Velocidad: responder en los primeros 45% del tiempo da puntos extra.
+    speedBonusEnabled: true,
+    speedBonusThresholdPct: 0.45,
+    speedBonusPoints: 15,
   },
   timing: {
     timerAllowed: true,
-    secondsPerQuestion: 20,
+    secondsPerQuestion: 15, // más agresivo que los 20 anteriores
   },
   feedback: {
     onError: 'gamificado',
@@ -60,24 +68,29 @@ const agil: ModeConfig = {
       letteredOptions: true,
       showVoiceButton: false,
       retryOnError: false,
+      // Prioriza preguntas difíciles (alta 3×, media 1×, baja excluida).
+      levelWeights: { alta: 3, media: 1, baja: 0 },
     },
     memory: {
-      columns: 4,
-      pairs: 8,
-      flipBackMs: 800,
+      // Grilla más grande: 5×4 = 20 cartas (10 parejas).
+      columns: 5,
+      pairs: 10,
+      flipBackMs: 700,
     },
     calc: {
       operations: ['suma', 'resta', 'multiplicacion', 'secuencia', 'porcentaje'],
       optionCount: 4,
-      maxOperand: 99,
-      rounds: 10,
+      maxOperand: 150, // números más grandes
+      rounds: 12,
+      escalateWithinSession: true, // las últimas rondas son más exigentes
     },
     attention: {
-      items: 20,
-      columns: 4,
+      // Grilla más grande: 24 elementos en 6 columnas.
+      items: 24,
+      columns: 6,
       differBy: 'forma',
       subtle: true,
-      rounds: 8,
+      rounds: 10,
     },
   },
 }
@@ -107,6 +120,12 @@ const sereno: ModeConfig = {
     showProgressBar: true,
     allowNegative: false,
     pointsPerCorrect: 20,
+    streakBonusEnabled: false,
+    streakBonusThreshold: 0,
+    streakBonusPoints: 0,
+    speedBonusEnabled: false,
+    speedBonusThresholdPct: 0,
+    speedBonusPoints: 0,
   },
   timing: {
     timerAllowed: false,
@@ -133,6 +152,7 @@ const sereno: ModeConfig = {
       letteredOptions: true,
       showVoiceButton: false,
       retryOnError: false,
+      levelWeights: {},
     },
     memory: {
       columns: 3,
@@ -144,6 +164,7 @@ const sereno: ModeConfig = {
       optionCount: 4,
       maxOperand: 25,
       rounds: 8,
+      escalateWithinSession: false,
     },
     attention: {
       items: 9,
@@ -183,6 +204,13 @@ const calmo: ModeConfig = {
     showProgressBar: false,
     allowNegative: false,
     pointsPerCorrect: 0,
+    // Regla sagrada: nunca bonus ni presión en Calmo.
+    streakBonusEnabled: false,
+    streakBonusThreshold: 0,
+    streakBonusPoints: 0,
+    speedBonusEnabled: false,
+    speedBonusThresholdPct: 0,
+    speedBonusPoints: 0,
   },
   timing: {
     // Regla sagrada: nunca temporizadores.
@@ -212,6 +240,7 @@ const calmo: ModeConfig = {
       letteredOptions: false,
       showVoiceButton: true,
       retryOnError: true,
+      levelWeights: {},
     },
     memory: {
       columns: 2,
@@ -223,6 +252,7 @@ const calmo: ModeConfig = {
       optionCount: 3,
       maxOperand: 10,
       rounds: 5,
+      escalateWithinSession: false,
     },
     attention: {
       items: 4,

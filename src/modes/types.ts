@@ -69,6 +69,18 @@ export interface ModeScoring {
   allowNegative: boolean
   /** Puntos por respuesta correcta (0 si `enabled` es false). */
   pointsPerCorrect: number
+  /** Bonus de racha: puntos extra al acertar N veces seguidas. */
+  streakBonusEnabled: boolean
+  /** Cuántos aciertos consecutivos activan el bonus de racha. */
+  streakBonusThreshold: number
+  /** Puntos extra por cada acierto mientras dure la racha. */
+  streakBonusPoints: number
+  /** Bonus de velocidad: puntos extra al responder dentro del umbral de tiempo. */
+  speedBonusEnabled: boolean
+  /** Fracción del tiempo total: si el usuario responde antes de este % del timer, gana bonus (0–1). */
+  speedBonusThresholdPct: number
+  /** Puntos extra por respuesta rápida. */
+  speedBonusPoints: number
 }
 
 /** Reglas de tiempo. Calmo: jamás temporizadores. */
@@ -120,6 +132,12 @@ export interface QuizActivityConfig {
    * Si es false, la primera respuesta fija el resultado y revela la correcta.
    */
   retryOnError: boolean
+  /**
+   * Pesos relativos por nivel al samplear preguntas.
+   * Ejemplo Ágil: `{ alta: 3, media: 1, baja: 0 }` prioriza preguntas difíciles.
+   * Vacío = todos los niveles con peso igual.
+   */
+  levelWeights: Partial<Record<Difficulty, number>>
 }
 
 export interface MemoryActivityConfig {
@@ -140,6 +158,8 @@ export interface CalcActivityConfig {
   maxOperand: number
   /** Ejercicios por sesión (el cálculo es infinito; esto define una ronda). */
   rounds: number
+  /** Si es true, los últimos ejercicios usan operandos más grandes que los primeros. */
+  escalateWithinSession: boolean
 }
 
 export interface AttentionActivityConfig {

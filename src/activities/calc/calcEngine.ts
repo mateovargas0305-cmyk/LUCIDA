@@ -75,3 +75,22 @@ export function generateCalcProblem(cfg: CalcActivityConfig): CalcProblem {
   const options = buildOptions(answer, cfg.optionCount)
   return { prompt, answer, options, correctIndex: options.indexOf(answer) }
 }
+
+/**
+ * Genera todos los problemas de una sesión.
+ * Si `escalateWithinSession` está activo, las primeras rondas usan operandos
+ * menores y las últimas llegan al máximo configurado, aumentando la dificultad
+ * de forma progresiva sin cambiar el modo ni la UI.
+ */
+export function generateCalcProblems(cfg: CalcActivityConfig): CalcProblem[] {
+  return Array.from({ length: cfg.rounds }, (_, i) => {
+    let maxOp = cfg.maxOperand
+    if (cfg.escalateWithinSession && cfg.rounds > 1) {
+      // Escala de 0.5× al comienzo hasta 1.3× al final.
+      const progress = i / (cfg.rounds - 1) // 0..1
+      const multiplier = 0.5 + progress * 0.8 // 0.5..1.3
+      maxOp = Math.max(5, Math.round(cfg.maxOperand * multiplier))
+    }
+    return generateCalcProblem({ ...cfg, maxOperand: maxOp })
+  })
+}

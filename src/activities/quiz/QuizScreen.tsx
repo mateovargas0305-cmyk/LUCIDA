@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { CountdownTimer } from '../../components/ui/CountdownTimer'
 import { SessionSummary } from '../../components/SessionSummary'
 import { useModeConfig } from '../../modes/modeContext'
 import { usePreferences } from '../../preferences/preferencesContext'
@@ -35,6 +37,21 @@ export function QuizScreen() {
   const reduce = useReducedMotion()
   const session = useQuizSession(config)
   const quizCfg = config.activities.quiz
+
+  // Timestamp de inicio de cada pregunta para calcular el bonus de velocidad.
+  const questionStartRef = useRef(Date.now())
+  const sessionIndex = session.index
+  useEffect(() => {
+    questionStartRef.current = Date.now()
+  }, [sessionIndex])
+
+  // Auto-avance tras timeout: 1.3s de pausa para que el usuario vea la correcta.
+  const { timedOut, next } = session
+  useEffect(() => {
+    if (!timedOut) return
+    const id = setTimeout(() => next(), 1300)
+    return () => clearTimeout(id)
+  }, [timedOut, next])
 
   if (session.finished) {
     return (
@@ -73,6 +90,8 @@ export function QuizScreen() {
   const q = session.current
   const lettered = quizCfg.letteredOptions
   const isLast = session.index >= session.total - 1
+  const showTimer =
+    config.timing.timerAllowed && config.timing.secondsPerQuestion !== null
 
   const statusOf = (i: number): OptionStatus => {
     if (!session.locked) return 'idle'
@@ -82,7 +101,24 @@ export function QuizScreen() {
   }
 
   const answeredCorrectly =
-    session.locked && session.selected === q.correctIndex
+    session.locked && !session.timedOut && session.selected === q.correctIndex
+
+  const handleSelect = (i: number) => {
+    const elapsed = Date.now() - questionStartRef.current
+    const secs = config.timing.secondsPerQuestion
+    const speedBonus =
+      config.scoring.speedBonusEnabled &&
+      secs !== null &&
+      elapsed < secs * config.scoring.speedBonusThresholdPct * 1000
+        ? config.scoring.speedBonusPoints
+        : 0
+    session.select(i, speedBonus)
+  }
+
+  const bonusSuffix =
+    answeredCorrectly && session.lastBonus
+      ? ` · +${session.lastBonus} bonus`
+      : ''
 
   return (
     <main
@@ -93,10 +129,17 @@ export function QuizScreen() {
         title="Cultura general"
         right={
           config.scoring.enabled ? (
-            <span className="flex items-center gap-2 rounded-pill bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
-              <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
-              {session.score}
-            </span>
+            <div className="flex items-center gap-2">
+              {session.currentStreak >= 3 && (
+                <span className="rounded-pill bg-agil px-2.5 py-1 text-[12px] font-bold text-surface">
+                  Racha {session.currentStreak}
+                </span>
+              )}
+              <span className="flex items-center gap-2 rounded-pill bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+                <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+                {session.score}
+              </span>
+            </div>
           ) : undefined
         }
       />
@@ -115,6 +158,15 @@ export function QuizScreen() {
             {session.index + 1}/{session.total}
           </span>
         </div>
+      )}
+
+      {showTimer && (
+        <CountdownTimer
+          totalSeconds={config.timing.secondsPerQuestion!}
+          questionKey={session.index}
+          onExpire={session.timeout}
+          paused={session.locked}
+        />
       )}
 
       {/* Enunciado */}
@@ -165,7 +217,7 @@ export function QuizScreen() {
           return (
             <li key={i}>
               <motion.button
-                onClick={() => session.select(i)}
+                onClick={() => handleSelect(i)}
                 disabled={session.locked}
                 whileTap={reduce || session.locked ? undefined : { scale: 0.99 }}
                 aria-label={text}
@@ -217,7 +269,12 @@ export function QuizScreen() {
         )}
 
         {session.locked &&
-          (lettered ? (
+          (session.timedOut ? (
+            <p className="text-center text-[15px] font-bold text-calmo-strong">
+              Tiempo agotado. La respuesta era la{' '}
+              <span className="text-positive">marcada en verde</span>.
+            </p>
+          ) : lettered ? (
             <p
               className={`text-center text-[15px] font-bold ${
                 answeredCorrectly ? 'text-positive' : 'text-calmo-strong'
@@ -226,7 +283,7 @@ export function QuizScreen() {
               {answeredCorrectly
                 ? `${config.feedback.successMessage}${
                     config.scoring.enabled
-                      ? ` +${config.scoring.pointsPerCorrect} puntos`
+                      ? ` +${config.scoring.pointsPerCorrect} pts${bonusSuffix}`
                       : ''
                   }`
                 : config.feedback.errorMessage}
@@ -240,20 +297,18 @@ export function QuizScreen() {
             />
           ))}
 
-        {(() => {
-          // Calmo: el avance aparece sólo tras acertar (una acción por pantalla).
-          // Ágil/Sereno: si el modo pide "Siguiente" siempre visible, se muestra
-          // deshabilitado hasta responder.
-          const showNext = lettered
-            ? config.navigation.persistentNext || session.locked
-            : session.locked
-          if (!showNext) return null
-          return (
-            <PrimaryButton onClick={session.next} disabled={!session.locked}>
-              {isLast ? 'Ver resultado' : lettered ? 'Siguiente' : 'Continuar'} ›
-            </PrimaryButton>
-          )
-        })()}
+        {!session.timedOut &&
+          (() => {
+            const showNext = lettered
+              ? config.navigation.persistentNext || session.locked
+              : session.locked
+            if (!showNext) return null
+            return (
+              <PrimaryButton onClick={session.next} disabled={!session.locked}>
+                {isLast ? 'Ver resultado' : lettered ? 'Siguiente' : 'Continuar'} ›
+              </PrimaryButton>
+            )
+          })()}
       </div>
     </main>
   )

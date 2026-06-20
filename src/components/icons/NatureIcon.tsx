@@ -83,5 +83,18 @@ export function NatureIcon({ id, size = 30 }: NatureIconProps) {
           <path d="M12 3l2.6 6 6.4.5-5 4.3 1.6 6.2L12 16.5 6.4 20l1.6-6.2-5-4.3 6.4-.5z" />
         </svg>
       )
+    case 'cloud':
+      return (
+        <svg {...common} {...stroke} aria-hidden>
+          <path d="M18 10h-1a5 5 0 0 0-9.9 1H7a4 4 0 0 0 0 8h11a3 3 0 1 0 0-6z" />
+        </svg>
+      )
+    case 'wave':
+      return (
+        <svg {...common} {...stroke} aria-hidden>
+          <path d="M2 10c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0 5-3.5 7.5 0" />
+          <path d="M2 17c2.5-3.5 5-3.5 7.5 0s5 3.5 7.5 0 5-3.5 7.5 0" />
+        </svg>
+      )
   }
 }
