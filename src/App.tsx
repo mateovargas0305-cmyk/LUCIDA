@@ -10,6 +10,8 @@ import { QuizScreen } from './activities/quiz/QuizScreen'
 import { CalcScreen } from './activities/calc/CalcScreen'
 import { MemoryScreen } from './activities/memory/MemoryScreen'
 import { AttentionScreen } from './activities/attention/AttentionScreen'
+import { SequenceScreen } from './activities/sequence/SequenceScreen'
+import { ChainedCalcScreen } from './activities/chained-calc/ChainedCalcScreen'
 import type { ActivityId } from './modes/types'
 import { screenEnter } from './lib/motion'
 
@@ -29,7 +31,10 @@ function initialScreen(): Screen {
     const start = new URLSearchParams(location.search).get('start')
     if (start === 'home') return { name: 'home' }
     if (start === 'settings') return { name: 'settings' }
-    if (start === 'quiz' || start === 'calc' || start === 'memory' || start === 'attention') {
+    if (
+      start === 'quiz' || start === 'calc' || start === 'memory' ||
+      start === 'attention' || start === 'sequence' || start === 'chainedCalc'
+    ) {
       return { name: 'activity', activity: start }
     }
   }
@@ -61,6 +66,10 @@ function ActivityScreen({ activity }: { activity: ActivityId }) {
       return <MemoryScreen />
     case 'attention':
       return <AttentionScreen />
+    case 'sequence':
+      return <SequenceScreen />
+    case 'chainedCalc':
+      return <ChainedCalcScreen />
   }
 }
 

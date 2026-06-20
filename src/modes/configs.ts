@@ -96,6 +96,22 @@ const agil: ModeConfig = {
       differDimensions: ['color', 'forma', 'tamaño'],
       difficultyStep: 0.12,
     },
+    sequence: {
+      colorCount: 4,
+      startLength: 3,
+      maxRounds: 10,
+      playbackSpeedMs: 500,
+      pauseBetweenMs: 150,
+      retryOnError: false,
+    },
+    chainedCalc: {
+      chainLength: 4,
+      operations: ['suma', 'resta', 'multiplicacion'],
+      maxOperand: 20,
+      rounds: 10,
+      showIntermediateResults: false,
+      escalateWithinSession: true,
+    },
   },
 }
 
@@ -181,6 +197,22 @@ const sereno: ModeConfig = {
       sessionDurationSeconds: 25,
       differDimensions: ['color', 'forma'],
       difficultyStep: 0.08,
+    },
+    sequence: {
+      colorCount: 4,
+      startLength: 3,
+      maxRounds: 6,
+      playbackSpeedMs: 800,
+      pauseBetweenMs: 250,
+      retryOnError: false,
+    },
+    chainedCalc: {
+      chainLength: 3,
+      operations: ['suma', 'resta', 'multiplicacion'],
+      maxOperand: 15,
+      rounds: 8,
+      showIntermediateResults: true,
+      escalateWithinSession: false,
     },
   },
 }
@@ -274,6 +306,24 @@ const calmo: ModeConfig = {
       sessionDurationSeconds: null,
       differDimensions: ['color'],
       difficultyStep: 0,
+    },
+    sequence: {
+      // Regla sagrada: 3 colores (menos estímulos), secuencias cortas, lento.
+      colorCount: 3,
+      startLength: 2,
+      maxRounds: 4,
+      playbackSpeedMs: 1200,
+      pauseBetweenMs: 500,
+      retryOnError: true,
+    },
+    chainedCalc: {
+      // Regla sagrada: cadena corta, operaciones simples, resultados visibles.
+      chainLength: 2,
+      operations: ['suma', 'resta'],
+      maxOperand: 10,
+      rounds: 5,
+      showIntermediateResults: true,
+      escalateWithinSession: false,
     },
   },
 }

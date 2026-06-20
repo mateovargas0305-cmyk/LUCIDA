@@ -188,11 +188,46 @@ export interface AttentionActivityConfig {
   difficultyStep: number
 }
 
+export interface SequenceActivityConfig {
+  /** Cuántos colores/botones distintos. */
+  colorCount: number
+  /** Longitud inicial de la secuencia. */
+  startLength: number
+  /** Cuántas rondas exitosas antes del resumen. */
+  maxRounds: number
+  /** Ms que cada elemento permanece resaltado durante la reproducción. */
+  playbackSpeedMs: number
+  /** Ms de pausa entre elementos durante la reproducción. */
+  pauseBetweenMs: number
+  /** Ante error, permitir reintentar la misma secuencia (Calmo: true). */
+  retryOnError: boolean
+}
+
+export interface ChainedCalcActivityConfig {
+  /** Cantidad de operaciones en la cadena. */
+  chainLength: number
+  /** Operaciones disponibles para generar la cadena. */
+  operations: CalcOperation[]
+  /** Operando máximo. */
+  maxOperand: number
+  /** Rondas por sesión. */
+  rounds: number
+  /**
+   * Mostrar los resultados intermedios de cada paso.
+   * Calmo/Sereno: true (ven el número que va corriendo).
+   * Ágil: false (deben calcular mentalmente toda la cadena).
+   */
+  showIntermediateResults: boolean
+  escalateWithinSession: boolean
+}
+
 export interface ModeActivities {
   quiz: QuizActivityConfig
   memory: MemoryActivityConfig
   calc: CalcActivityConfig
   attention: AttentionActivityConfig
+  sequence: SequenceActivityConfig
+  chainedCalc: ChainedCalcActivityConfig
 }
 
 /** Identificador de actividad (para iterar el inicio y rutas). */

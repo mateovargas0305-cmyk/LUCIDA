@@ -1,0 +1,209 @@
+import { motion, useReducedMotion } from 'framer-motion'
+import { ScreenHeader } from '../../components/ui/ScreenHeader'
+import { PrimaryButton } from '../../components/ui/PrimaryButton'
+import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { SessionSummary } from '../../components/SessionSummary'
+import { useModeConfig } from '../../modes/modeContext'
+import { useNav } from '../../navigation/navContext'
+import { tpx } from '../../lib/typography'
+import { useSequenceGame } from './useSequenceGame'
+import {
+  SEQUENCE_COLORS,
+  COLOR_BG,
+  COLOR_HIGHLIGHT,
+  type SequenceColor,
+} from './sequenceEngine'
+
+const COLOR_LABEL: Record<SequenceColor, string> = {
+  agil: 'ámbar',
+  sereno: 'verde',
+  calmo: 'terracota',
+  positive: 'lima',
+}
+
+export function SequenceScreen() {
+  const config = useModeConfig()
+  const { back } = useNav()
+  const reduce = useReducedMotion()
+  const seqCfg = config.activities.sequence
+  const pointsPerCorrect = config.scoring.enabled ? config.scoring.pointsPerCorrect : 0
+
+  const game = useSequenceGame(seqCfg, pointsPerCorrect)
+
+  if (game.phase === 'done') {
+    return (
+      <SessionSummary
+        headline="¡Sesión completa!"
+        subline={
+          <>
+            Completaste <strong>{game.roundsWon}</strong> de {seqCfg.maxRounds} secuencias.
+          </>
+        }
+        stats={[
+          { label: 'Puntaje', value: game.score, accent: 'agil' },
+          { label: 'Rondas', value: `${game.roundsWon}/${seqCfg.maxRounds}`, accent: 'sereno' },
+        ]}
+        record={{
+          activity: 'sequence',
+          mode: config.id,
+          correct: game.roundsWon,
+          total: seqCfg.maxRounds,
+          score: game.score,
+        }}
+        onAgain={game.restart}
+        onHome={back}
+        againLabel="Jugar de nuevo"
+      />
+    )
+  }
+
+  const big = !config.scoring.enabled
+  const colors = SEQUENCE_COLORS.slice(0, seqCfg.colorCount) as SequenceColor[]
+  const isPlaying = game.phase === 'playing'
+  const isInput = game.phase === 'input'
+  const isSuccess = game.phase === 'success'
+  const isError = game.phase === 'error'
+
+  // Grilla de botones: 1 columna en Calmo, 2×2 en Ágil/Sereno.
+  const useGrid = colors.length === 4
+
+  return (
+    <main
+      className="flex flex-1 flex-col px-6 pb-9 pt-12"
+      style={{ rowGap: config.controls.blockGapPx }}
+    >
+      {big ? (
+        <div>
+          <h1
+            className="font-serif font-semibold leading-snug text-ink-strong"
+            style={{ fontSize: tpx(config.typography.headingPx) }}
+          >
+            Repetí la secuencia
+          </h1>
+          <p
+            className="mt-2 leading-relaxed text-ink-soft"
+            style={{ fontSize: tpx(config.typography.baseTextPx) }}
+          >
+            {isPlaying
+              ? 'Mirá con atención.'
+              : isInput
+                ? 'Tocá los colores en el mismo orden.'
+                : 'Observá y repetí.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <ScreenHeader
+            title="Secuencias"
+            right={
+              config.scoring.enabled ? (
+                <span className="flex items-center gap-1.5 rounded-full bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+                  <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+                  {game.score}
+                </span>
+              ) : undefined
+            }
+          />
+          {/* Progreso de rondas */}
+          <div className="flex items-center gap-2">
+            {Array.from({ length: seqCfg.maxRounds }, (_, i) => (
+              <span
+                key={i}
+                className={`h-2 flex-1 rounded-full transition-colors ${
+                  i < game.roundsWon
+                    ? 'bg-positive'
+                    : i === game.roundsWon
+                      ? 'bg-sereno'
+                      : 'bg-border'
+                }`}
+              />
+            ))}
+          </div>
+          <p className="text-center font-serif text-[20px] font-semibold text-ink-strong">
+            {isPlaying ? 'Mirá...' : isInput ? '¿Cuál era el orden?' : ' '}
+          </p>
+        </>
+      )}
+
+      {/* Indicador de progreso de entrada (solo en fase input) */}
+      {isInput && game.sequence.length > 0 && (
+        <div className="flex justify-center gap-2" aria-label="Progreso de entrada">
+          {game.sequence.map((_, i) => (
+            <span
+              key={i}
+              className={`h-3 w-3 rounded-full transition-colors ${
+                i < game.inputProgress ? 'bg-positive' : 'bg-border'
+              }`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Botones de colores */}
+      <ul
+        className={
+          useGrid
+            ? 'grid grid-cols-2 flex-1 content-center gap-3'
+            : 'flex flex-1 flex-col content-center justify-center gap-3'
+        }
+      >
+        {colors.map((color) => {
+          const isHighlighted = game.highlightIndex !== null
+            ? game.sequence[game.highlightIndex] === color && isPlaying
+            : false
+          const colorClass = isHighlighted
+            ? COLOR_HIGHLIGHT[color]
+            : COLOR_BG[color]
+
+          return (
+            <li key={color} className={useGrid ? '' : 'mx-auto w-full max-w-xs'}>
+              <motion.button
+                onClick={() => game.tap(color)}
+                disabled={!isInput}
+                animate={
+                  reduce
+                    ? undefined
+                    : { scale: isHighlighted ? 1.06 : 1, opacity: isPlaying && !isHighlighted ? 0.55 : 1 }
+                }
+                transition={{ duration: 0.12 }}
+                aria-label={`Color ${COLOR_LABEL[color]}`}
+                aria-pressed={isHighlighted}
+                className={`w-full rounded-3xl border-2 border-transparent transition-all ${colorClass}`}
+                style={{
+                  minHeight: big ? config.controls.tapTargetMinPx + 24 : 86,
+                  aspectRatio: useGrid ? '1 / 1' : undefined,
+                }}
+              />
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* Feedback y acciones */}
+      <div className="mt-auto flex flex-col gap-3 pt-2">
+        {isError && (
+          <FeedbackBanner
+            variant="gentle"
+            message={
+              seqCfg.retryOnError
+                ? config.feedback.errorMessage
+                : `${config.feedback.errorMessage} Veamos cómo te fue.`
+            }
+            fontSize={config.typography.baseTextPx - 2}
+          />
+        )}
+        {isSuccess && !big && (
+          <p className="text-center text-[15px] font-bold text-positive">
+            {config.feedback.successMessage} Secuencia {game.length} →{' '}
+            {game.length + 1}…
+          </p>
+        )}
+        {game.phase === 'intro' && (
+          <PrimaryButton onClick={game.start}>
+            Comenzar ›
+          </PrimaryButton>
+        )}
+      </div>
+    </main>
+  )
+}

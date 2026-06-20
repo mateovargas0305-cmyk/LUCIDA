@@ -11,6 +11,8 @@ const ACTIVITY_ORDER: readonly ActivityId[] = [
   'calc',
   'memory',
   'attention',
+  'sequence',
+  'chainedCalc',
 ]
 
 const ACTIVITY_HINT: Record<ActivityId, string> = {
@@ -18,6 +20,8 @@ const ACTIVITY_HINT: Record<ActivityId, string> = {
   calc: 'Sumas, restas y más.',
   memory: 'Encontrá las parejas.',
   attention: 'Descubrí el diferente.',
+  sequence: 'Repetí la secuencia de colores.',
+  chainedCalc: 'Calculá paso a paso la cadena.',
 }
 
 function ActivityGlyph({ id }: { id: ActivityId }) {
@@ -52,6 +56,25 @@ function ActivityGlyph({ id }: { id: ActivityId }) {
           <circle cx="17" cy="7" r="2.5" />
           <circle cx="7" cy="17" r="2.5" />
           <circle cx="17" cy="17" r="2.5" fill="currentColor" />
+        </svg>
+      )
+    case 'sequence':
+      return (
+        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          <rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.4} />
+          <rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor" />
+          <rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.6} />
+          <rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" stroke="none" opacity={0.2} />
+        </svg>
+      )
+    case 'chainedCalc':
+      return (
+        <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          <circle cx="5" cy="12" r="3" />
+          <path d="M8 12h2" />
+          <rect x="10" y="9" width="4" height="6" rx="1" />
+          <path d="M14 12h2" />
+          <circle cx="19" cy="12" r="3" />
         </svg>
       )
   }
