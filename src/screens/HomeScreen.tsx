@@ -66,7 +66,7 @@ export function HomeScreen() {
 
   return (
     <main
-      className="flex flex-1 flex-col px-6 pb-10 pt-12"
+      className="flex flex-1 flex-col px-6 pb-10 pt-8"
       style={{ rowGap: config.controls.blockGapPx }}
     >
       <header className="flex items-center justify-between gap-2">

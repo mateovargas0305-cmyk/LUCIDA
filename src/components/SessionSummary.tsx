@@ -64,7 +64,7 @@ export function SessionSummary({
   if (!config.scoring.enabled) {
     // Calmo: nada de puntaje, nada de "errores". Sólo gratitud y calma.
     return (
-      <main className="flex flex-1 flex-col items-center px-7 pb-9 pt-12 text-center">
+      <main className="flex flex-1 flex-col items-center px-7 pb-9 pt-8 text-center">
         <div className="flex flex-1 flex-col items-center justify-center">
           <div className="relative mb-8 h-[120px] w-[140px]" aria-hidden>
             <span className="absolute left-3 top-4 h-[84px] w-[84px] rounded-full bg-agil-soft opacity-90" />
@@ -91,7 +91,7 @@ export function SessionSummary({
 
   // Ágil / Sereno: resumen con estadísticas.
   return (
-    <main className="flex flex-1 flex-col px-6 pb-9 pt-12">
+    <main className="flex flex-1 flex-col px-6 pb-9 pt-8">
       <div className="text-center">
         <motion.div
           initial={reduce ? false : { scale: 0.8, opacity: 0 }}

@@ -69,7 +69,7 @@ export function AttentionRoundsView({ config }: Props) {
 
   return (
     <main
-      className="flex flex-1 flex-col px-6 pb-9 pt-12"
+      className="flex flex-1 flex-col px-6 pb-9 pt-8"
       style={{ rowGap: config.controls.blockGapPx }}
     >
       <h1

@@ -32,6 +32,16 @@ let _completePoly: Tone.PolySynth<Tone.Synth> | null = null
 
 // ── Inicialización ─────────────────────────────────────────────────────────
 
+function _handleVisibilityChange(): void {
+  if (!_bgPlayer || !_bgLoaded || !_musicEnabled) return
+  if (document.hidden) {
+    if (_bgPlayer.state === 'started') _bgPlayer.stop()
+  } else {
+    if (Tone.getContext().state === 'suspended') void Tone.start()
+    if (_bgPlayer.state !== 'started') _bgPlayer.start()
+  }
+}
+
 export async function initAudio(): Promise<void> {
   if (_initialized) return
   try {
@@ -39,6 +49,7 @@ export async function initAudio(): Promise<void> {
     _initialized = true
     _buildSynths()
     _loadMusic()
+    document.addEventListener('visibilitychange', _handleVisibilityChange)
   } catch (err) {
     console.warn('[Lúcida Audio] Error al inicializar:', err)
   }

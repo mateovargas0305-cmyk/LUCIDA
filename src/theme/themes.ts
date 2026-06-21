@@ -70,13 +70,13 @@ const bosque: Theme = {
     sereno: '96 138 110',
     serenoStrong: '58 92 70',
     serenoSoft: '216 230 217',
-    calmo: '176 110 64',
-    calmoStrong: '128 72 36',
-    calmoSoft: '235 222 205',
-    // positive armoniza con el verde del tema (igual que sereno en tierra)
-    positive: '96 138 110',
-    positiveSoft: '216 230 217',
-    positiveInk: '44 80 56',
+    calmo: '44 86 60',
+    calmoStrong: '28 60 40',
+    calmoSoft: '204 222 210',
+    // positive armoniza con el calmo (verde bosque profundo)
+    positive: '44 86 60',
+    positiveSoft: '204 222 210',
+    positiveInk: '26 54 34',
   },
 }
 

@@ -43,7 +43,7 @@ export function ModeSelectScreen() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 pb-10 pt-12">
+    <main className="flex flex-1 flex-col px-6 pb-10 pt-8">
       <Logo size={28} />
 
       <h1 className="mt-9 font-serif text-[25px] font-semibold leading-tight text-ink-strong">

@@ -35,7 +35,7 @@ function DurationSelectView({ defaultSeconds, onStart }: DurationSelectProps) {
   const pct = ((seconds - MIN) / (MAX - MIN)) * 100
 
   return (
-    <main className="flex flex-1 flex-col gap-8 px-6 pb-9 pt-12">
+    <main className="flex flex-1 flex-col gap-8 px-6 pb-9 pt-8">
       <ScreenHeader title="Velocidad de símbolos" />
 
       <div className="flex flex-col items-center gap-2 text-center">
@@ -187,7 +187,7 @@ function SymbolTimeAttackView({ table, totalSeconds, onFinish, onBack, bestScore
 
   return (
     <main
-      className="flex flex-1 flex-col px-6 pb-9 pt-12"
+      className="flex flex-1 flex-col px-6 pb-9 pt-8"
       style={{ rowGap: config.controls.blockGapPx }}
     >
       <ScreenHeader
@@ -370,7 +370,7 @@ function SymbolRoundsView() {
 
   return (
     <main
-      className="flex flex-1 flex-col px-6 pb-9 pt-12"
+      className="flex flex-1 flex-col px-6 pb-9 pt-8"
       style={{ rowGap: config.controls.blockGapPx }}
     >
       <ScreenHeader title="Velocidad de símbolos" />

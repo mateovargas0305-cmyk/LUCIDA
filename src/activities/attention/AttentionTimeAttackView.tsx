@@ -79,7 +79,7 @@ export function AttentionTimeAttackView({ config, totalSeconds }: Props) {
   const urgent = pct <= 0.33
 
   return (
-    <main className="flex flex-1 flex-col px-6 pb-9 pt-12 gap-4">
+    <main className="flex flex-1 flex-col px-6 pb-9 pt-8 gap-4">
       <ScreenHeader
         title="Atención"
         right={

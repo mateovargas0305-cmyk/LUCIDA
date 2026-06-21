@@ -23,7 +23,7 @@ function DurationSelectView({
   const pct = ((seconds - MIN) / (MAX - MIN)) * 100
 
   return (
-    <main className="flex flex-1 flex-col gap-8 px-6 pb-9 pt-12">
+    <main className="flex flex-1 flex-col gap-8 px-6 pb-9 pt-8">
       <ScreenHeader title="Atención" />
 
       <div className="flex flex-col items-center gap-2 text-center">
