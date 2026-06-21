@@ -17,27 +17,17 @@ export interface AttentionRound {
   elements: ElementVisual[]
 }
 
-// --- Pares de colores (solo tokens de tema, sin hex) ---
-interface ColorPair {
-  base: string
-  diff: string
-}
+// ── Paleta de colores (solo tokens de tema) ───────────────────────────────────
 
-const OBVIOUS_PAIRS: ColorPair[] = [
-  { base: 'bg-sereno', diff: 'bg-calmo' },
-  { base: 'bg-calmo', diff: 'bg-agil' },
-  { base: 'bg-agil', diff: 'bg-positive' },
-  { base: 'bg-positive', diff: 'bg-sereno' },
-]
+/** Colores sólidos — diferencias obvias. */
+const SOLID_COLORS = ['bg-agil', 'bg-sereno', 'bg-calmo', 'bg-positive'] as const
+/** Colores suaves — diferencias sutiles. */
+const SOFT_COLORS = ['bg-agil-soft', 'bg-sereno-soft', 'bg-calmo-soft'] as const
 
-const SUBTLE_PAIRS: ColorPair[] = [
-  { base: 'bg-sereno', diff: 'bg-sereno-soft' },
-  { base: 'bg-calmo', diff: 'bg-calmo-soft' },
-  { base: 'bg-agil', diff: 'bg-agil-soft' },
-]
+// ── Formas ────────────────────────────────────────────────────────────────────
 
-const SHAPES_BASE: ShapeId[] = ['circle', 'rounded', 'square']
-const SHAPES_OBVIOUS: ShapeId[] = ['triangle', 'diamond']
+const SHAPES_COMMON: ShapeId[] = ['circle', 'rounded', 'square']
+const SHAPES_DISTINCT: ShapeId[] = ['triangle', 'diamond']
 
 const SHAPE_PAIRS_SUBTLE: Array<[ShapeId, ShapeId]> = [
   ['circle', 'rounded'],
@@ -45,8 +35,15 @@ const SHAPE_PAIRS_SUBTLE: Array<[ShapeId, ShapeId]> = [
   ['circle', 'square'],
 ]
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
+}
+
+function pickExcluding<T>(arr: readonly T[], exclude: T): T {
+  const pool = arr.filter((x) => x !== exclude)
+  return pool.length > 0 ? pick(pool) : pick(arr)
 }
 
 function pickDim(dims: AttentionDiffDimension[]): AttentionDiffDimension {
@@ -67,13 +64,16 @@ function randomGridSize(base: number, cols: number, difficulty: number): number 
 
   if (sizes.length === 0) return base
 
-  // A mayor dificultad más items (más difícil escanear la grilla).
   const maxIdx = sizes.length - 1
   const biasedIdx = Math.min(
     maxIdx,
     Math.floor(difficulty * maxIdx * 0.7 + Math.random() * sizes.length * 0.5),
   )
   return sizes[Math.max(0, biasedIdx)]
+}
+
+function visuallyDifferent(a: ElementVisual, b: ElementVisual): boolean {
+  return a.colorClass !== b.colorClass || a.shape !== b.shape || a.sizePct !== b.sizePct
 }
 
 /**
@@ -96,9 +96,9 @@ export function buildAttentionRound(
   const dim: AttentionDiffDimension =
     cfg.differDimensions.length > 0 ? pickDim(cfg.differDimensions) : 'color'
 
-  const basePair = isSubtle ? pick(SUBTLE_PAIRS) : pick(OBVIOUS_PAIRS)
-  const baseColor = basePair.base
-  const baseShape: ShapeId = pick(SHAPES_BASE)
+  // Base visual — igual para todos los elementos
+  const baseColor = pick(SOLID_COLORS)
+  const baseShape: ShapeId = pick(SHAPES_COMMON)
   const baseSizePct = 65
 
   const elements: ElementVisual[] = Array.from({ length: gridSize }, () => ({
@@ -107,17 +107,13 @@ export function buildAttentionRound(
     sizePct: baseSizePct,
   }))
 
+  // Aplica la diferencia en el elemento correcto
   switch (dim) {
     case 'color': {
-      const pool = isSubtle
-        ? SUBTLE_PAIRS
-        : OBVIOUS_PAIRS.filter((p) => p.diff !== baseColor)
-      const pair = pool.length > 0 ? pick(pool) : pick(OBVIOUS_PAIRS)
-      elements[correctIndex] = {
-        colorClass: pair.diff,
-        shape: baseShape,
-        sizePct: baseSizePct,
-      }
+      const diffColor = isSubtle
+        ? pick(SOFT_COLORS)                       // suave: cualquier soft (distinta del sólido base)
+        : pickExcluding(SOLID_COLORS, baseColor)  // obvia: otro color sólido
+      elements[correctIndex] = { colorClass: diffColor, shape: baseShape, sizePct: baseSizePct }
       break
     }
     case 'forma': {
@@ -130,7 +126,7 @@ export function buildAttentionRound(
       } else {
         elements[correctIndex] = {
           ...elements[correctIndex],
-          shape: pick(SHAPES_OBVIOUS),
+          shape: pick(SHAPES_DISTINCT),
         }
       }
       break
@@ -145,19 +141,14 @@ export function buildAttentionRound(
     }
   }
 
-  // Invariant: el elemento en correctIndex debe diferir visualmente de todos los demás.
+  // Garantía final: si por cualquier razón el elemento correcto es idéntico al
+  // resto, forzamos una diferencia de color usando un sólido contrastante.
   if (gridSize > 1) {
     const ref = elements[correctIndex === 0 ? 1 : 0]
-    const diff = elements[correctIndex]
-    const isDifferent =
-      diff.colorClass !== ref.colorClass ||
-      diff.shape !== ref.shape ||
-      diff.sizePct !== ref.sizePct
-    if (!isDifferent) {
-      const safe = OBVIOUS_PAIRS.find((p) => p.diff !== ref.colorClass)
+    if (!visuallyDifferent(elements[correctIndex], ref)) {
       elements[correctIndex] = {
-        ...diff,
-        colorClass: safe ? safe.diff : 'bg-calmo',
+        ...elements[correctIndex],
+        colorClass: pickExcluding(SOLID_COLORS, ref.colorClass),
       }
     }
   }

@@ -834,14 +834,6 @@ export const QUIZ_BANK: readonly QuizQuestion[] = [
     correctIndex: 1,
   },
   {
-    id: 'mus-piano-teclas-t2',
-    category: 'musica',
-    level: 'alta',
-    prompt: '¿Cuántas teclas tiene un piano estándar moderno?',
-    options: ['66', '76', '88', '102'],
-    correctIndex: 2,
-  },
-  {
     id: 'mus-beatles-t2',
     category: 'musica',
     level: 'baja',
