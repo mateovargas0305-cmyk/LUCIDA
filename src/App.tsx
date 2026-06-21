@@ -3,6 +3,7 @@ import { AppShell } from './components/layout/AppShell'
 import { ModeProvider } from './modes/ModeProvider'
 import { NavProvider } from './navigation/NavProvider'
 import { useNav, type Screen } from './navigation/navContext'
+import { useAudioSync } from './hooks/useAudioSync'
 import { ModeSelectScreen } from './screens/ModeSelectScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { SettingsScreen } from './screens/SettingsScreen'
@@ -80,6 +81,12 @@ function ActivityScreen({ activity }: { activity: ActivityId }) {
   }
 }
 
+/** Sincroniza prefs + modo al audioManager. Debe estar dentro de ModeProvider. */
+function AudioSync() {
+  useAudioSync()
+  return null
+}
+
 function CurrentScreen() {
   const { screen } = useNav()
   const reduce = useReducedMotion()
@@ -107,6 +114,7 @@ export default function App() {
   return (
     <ModeProvider>
       <NavProvider initial={initialScreen()}>
+        <AudioSync />
         <AppShell>
           <CurrentScreen />
         </AppShell>

@@ -1,4 +1,5 @@
 import { useMemo, useReducer } from 'react'
+import { playCorrect, playError } from '../../lib/audioManager'
 
 /** Cualquier ronda con opciones y un índice correcto. */
 export interface ChoiceRound {
@@ -167,8 +168,14 @@ export function useChoiceSession<T extends ChoiceRound>(
     ...state,
     current: state.rounds[state.index],
     total: state.rounds.length,
-    select: (index, speedBonus = 0) =>
-      dispatch({ type: 'select', index, speedBonus }),
+    select: (index, speedBonus = 0) => {
+      if (!state.finished && !state.locked) {
+        const isCorrect = index === state.rounds[state.index].correctIndex
+        if (isCorrect) playCorrect()
+        else playError()
+      }
+      dispatch({ type: 'select', index, speedBonus })
+    },
     next: () => dispatch({ type: 'next' }),
     timeout: () => dispatch({ type: 'timeout' }),
     restart: () => dispatch({ type: 'restart', rounds: opts.build() }),

@@ -179,29 +179,54 @@ export function SettingsScreen() {
           renderLabel={(id) => TEXT_SCALE_LABEL[id]}
         />
 
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-[14px] font-bold text-ink-soft">Sonido</div>
-            <div className="text-[13px] text-ink-muted">
-              Lectura por voz y avisos suaves.
+        {/* Tres toggles de audio separados */}
+        {(
+          [
+            {
+              label: 'Lectura por voz',
+              description: 'Lee la pregunta en voz alta (Calmo).',
+              value: prefs.soundEnabled,
+              toggle: () => prefs.setSoundEnabled(!prefs.soundEnabled),
+              ariaLabel: 'Lectura por voz',
+            },
+            {
+              label: 'Efectos de sonido',
+              description: 'Sonidos suaves al acertar, errar y cerrar la sesión.',
+              value: prefs.soundFxEnabled,
+              toggle: () => prefs.setSoundFxEnabled(!prefs.soundFxEnabled),
+              ariaLabel: 'Efectos de sonido',
+            },
+            {
+              label: 'Música de fondo',
+              description: 'Música ambient en loop, a volumen muy bajo.',
+              value: prefs.musicEnabled,
+              toggle: () => prefs.setMusicEnabled(!prefs.musicEnabled),
+              ariaLabel: 'Música de fondo',
+            },
+          ] as const
+        ).map((item) => (
+          <div key={item.ariaLabel} className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-[14px] font-bold text-ink-soft">{item.label}</div>
+              <div className="text-[13px] leading-snug text-ink-muted">{item.description}</div>
             </div>
-          </div>
-          <button
-            role="switch"
-            aria-checked={prefs.soundEnabled}
-            aria-label="Sonido"
-            onClick={() => prefs.setSoundEnabled(!prefs.soundEnabled)}
-            className={`relative h-9 w-16 flex-none rounded-pill transition-colors ${
-              prefs.soundEnabled ? 'bg-sereno' : 'bg-border-strong'
-            }`}
-          >
-            <span
-              className={`absolute top-1 h-7 w-7 rounded-full bg-surface shadow-card transition-[left] ${
-                prefs.soundEnabled ? 'left-8' : 'left-1'
+            <button
+              role="switch"
+              aria-checked={item.value}
+              aria-label={item.ariaLabel}
+              onClick={item.toggle}
+              className={`relative h-9 w-16 flex-none rounded-pill transition-colors ${
+                item.value ? 'bg-sereno' : 'bg-border-strong'
               }`}
-            />
-          </button>
-        </div>
+            >
+              <span
+                className={`absolute top-1 h-7 w-7 rounded-full bg-surface shadow-card transition-[left] ${
+                  item.value ? 'left-8' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+        ))}
       </section>
 
       <button

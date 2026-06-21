@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useModeConfig } from '../modes/modeContext'
+import { playComplete } from '../lib/audioManager'
 import { PrimaryButton } from './ui/PrimaryButton'
 import { ACCENT } from '../lib/accent'
 import { tpx } from '../lib/typography'
@@ -51,12 +52,13 @@ export function SessionSummary({
   const reduce = useReducedMotion()
   const accent = ACCENT[config.accent]
 
-  // Guardar la sesión una sola vez (el ref sobrevive al doble-montaje de StrictMode).
+  // Guardar la sesión y reproducir sonido de cierre una sola vez.
   const saved = useRef(false)
   useEffect(() => {
     if (saved.current) return
     saved.current = true
     void recordSession(record)
+    playComplete()
   }, [record])
 
   if (!config.scoring.enabled) {

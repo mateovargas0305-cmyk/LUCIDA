@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { SymbolKey, SymbolSpeedRound } from './symbolSpeedEngine'
 import { buildSymbolRound } from './symbolSpeedEngine'
+import { playCorrect, playError } from '../../lib/audioManager'
 
 interface State {
   timeLeft: number
@@ -104,7 +105,10 @@ export function useSymbolTimeAttack(
   const select = useCallback(
     (index: number) => {
       if (state.locked || state.finished) return
-      dispatch({ type: 'select', index, isCorrect: index === round.correctIndex })
+      const isCorrect = index === round.correctIndex
+      if (isCorrect) playCorrect()
+      else playError()
+      dispatch({ type: 'select', index, isCorrect })
     },
     [state.locked, state.finished, round.correctIndex],
   )

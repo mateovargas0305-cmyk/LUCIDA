@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { AttentionRound } from './attentionEngine'
+import { playCorrect, playError } from '../../lib/audioManager'
 
 interface State {
   timeLeft: number
@@ -115,6 +116,9 @@ export function useTimeAttackSession(opts: Options): TimeAttackSession {
       if (state.locked || state.finished) return
       const isCorrect = index === round.correctIndex
       const newStreak = isCorrect ? state.currentStreak + 1 : 0
+
+      if (isCorrect) playCorrect()
+      else playError()
 
       const newDiff = isCorrect
         ? Math.min(1, difficultyRef.current + difficultyStep)

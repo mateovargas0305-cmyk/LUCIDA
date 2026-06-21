@@ -59,6 +59,11 @@ const agil: ModeConfig = {
     multiColumnHome: true,
   },
   motion: 'energico',
+  audio: {
+    musicVolume: -22,
+    fxVolume: -8,
+    duckDuringTTS: false,
+  },
   activities: {
     quiz: {
       optionsToShow: 4,
@@ -176,6 +181,11 @@ const sereno: ModeConfig = {
     multiColumnHome: true,
   },
   motion: 'sereno',
+  audio: {
+    musicVolume: -26,
+    fxVolume: -10,
+    duckDuringTTS: false,
+  },
   activities: {
     quiz: {
       optionsToShow: 4,
@@ -298,6 +308,11 @@ const calmo: ModeConfig = {
     multiColumnHome: false,
   },
   motion: 'minimo',
+  audio: {
+    musicVolume: -34,    // apenas perceptible (sagrado: no compite con la voz)
+    fxVolume: -14,       // efectos mínimos
+    duckDuringTTS: true, // la voz tiene prioridad absoluta
+  },
   activities: {
     quiz: {
       optionsToShow: 3,

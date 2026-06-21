@@ -18,19 +18,28 @@ export const TEXT_SCALE_LABEL: Record<TextScaleId, string> = {
 
 export interface Preferences {
   theme: ThemeId
+  /** Lectura por voz (TTS) en actividades que la soporten (ej. Calmo Quiz). */
   soundEnabled: boolean
+  /** Efectos de sonido sintetizados (acierto, error, selección, cierre). */
+  soundFxEnabled: boolean
+  /** Música de fondo en loop. Off por defecto; el usuario la activa si quiere. */
+  musicEnabled: boolean
   textScale: TextScaleId
 }
 
 export interface PreferencesContextValue extends Preferences {
   setTheme: (id: ThemeId) => void
   setSoundEnabled: (on: boolean) => void
+  setSoundFxEnabled: (on: boolean) => void
+  setMusicEnabled: (on: boolean) => void
   setTextScale: (id: TextScaleId) => void
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'tierra',
   soundEnabled: true,
+  soundFxEnabled: true,
+  musicEnabled: false,   // música off por defecto
   textScale: 'normal',
 }
 

@@ -261,6 +261,16 @@ export interface ModeActivities {
 /** Identificador de actividad (para iterar el inicio y rutas). */
 export type ActivityId = keyof ModeActivities
 
+/** Comportamiento de audio para el modo. */
+export interface ModeAudioConfig {
+  /** Volumen de la música de fondo en dB (más negativo = más suave). */
+  musicVolume: number
+  /** Volumen de los efectos de sonido en dB. */
+  fxVolume: number
+  /** Atenuar la música cuando la lectura por voz está activa (solo Calmo). */
+  duckDuringTTS: boolean
+}
+
 // ── Configuración completa del modo ─────────────────────────────────────────
 
 export interface ModeConfig {
@@ -281,5 +291,6 @@ export interface ModeConfig {
   feedback: ModeFeedback
   navigation: ModeNavigation
   motion: MotionEnergy
+  audio: ModeAudioConfig
   activities: ModeActivities
 }

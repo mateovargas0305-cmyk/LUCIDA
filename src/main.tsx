@@ -2,42 +2,37 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { PreferencesProvider } from './preferences/PreferencesProvider'
-import {
-  DEFAULT_PREFERENCES,
-  TEXT_SCALE_VALUE,
-  type Preferences,
-} from './preferences/preferencesContext'
+import { DEFAULT_PREFERENCES, TEXT_SCALE_VALUE } from './preferences/preferencesContext'
 import { applyTheme } from './theme/applyTheme'
 import { THEMES } from './theme/themes'
 import './index.css'
 
 /**
- * Bootstrap síncrono: leemos las preferencias antes del primer render para
- * aplicar tema y escala de texto sin parpadeo. El provider las gobierna luego.
+ * Bootstrap síncrono: aplica tema y escala de texto antes del primer render
+ * para evitar el parpadeo. Solo lee theme y textScale (son los únicos valores
+ * necesarios antes de que React monte el árbol).
  */
 function bootstrapPreferences(): void {
-  let prefs: Preferences = DEFAULT_PREFERENCES
   try {
     const raw = localStorage.getItem('lucida.prefs')
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<Preferences>
-      prefs = {
-        theme: parsed.theme && parsed.theme in THEMES ? parsed.theme : prefs.theme,
-        soundEnabled:
-          typeof parsed.soundEnabled === 'boolean'
-            ? parsed.soundEnabled
-            : prefs.soundEnabled,
-        textScale: parsed.textScale ?? prefs.textScale,
-      }
-    }
+    if (!raw) return
+    const v = JSON.parse(raw) as Record<string, unknown>
+    const theme =
+      typeof v.theme === 'string' && v.theme in THEMES
+        ? v.theme
+        : DEFAULT_PREFERENCES.theme
+    const textScale =
+      v.textScale === 'normal' || v.textScale === 'grande' || v.textScale === 'mas-grande'
+        ? v.textScale
+        : DEFAULT_PREFERENCES.textScale
+    applyTheme(theme as keyof typeof THEMES)
+    document.documentElement.style.setProperty(
+      '--text-scale',
+      String(TEXT_SCALE_VALUE[textScale] ?? 1),
+    )
   } catch {
     // Sin almacenamiento: usamos los valores por defecto.
   }
-  applyTheme(prefs.theme)
-  document.documentElement.style.setProperty(
-    '--text-scale',
-    String(TEXT_SCALE_VALUE[prefs.textScale] ?? 1),
-  )
 }
 
 bootstrapPreferences()

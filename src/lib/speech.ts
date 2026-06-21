@@ -2,8 +2,10 @@
  * Lectura por voz con la Web Speech API (offline, sin dependencias).
  * Es opcional y degrada en silencio si el navegador no la soporta.
  *
+ * En Calmo: atenúa la música de fondo mientras habla (ducking) y la restaura al terminar.
  * DIAGNÓSTICO: loguea en consola para detectar problemas en dispositivos móviles.
  */
+import { duckMusic, unduckMusic } from './audioManager'
 export function canSpeak(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
@@ -74,9 +76,18 @@ export function speak(text: string): void {
       utterance.pitch = 1
       if (voice) utterance.voice = voice
 
-      utterance.onstart = () => console.info('[Lúcida TTS] onstart ✓')
-      utterance.onend = () => console.info('[Lúcida TTS] onend ✓')
-      utterance.onerror = (e) => console.error('[Lúcida TTS] onerror:', e.error)
+      utterance.onstart = () => {
+        console.info('[Lúcida TTS] onstart ✓')
+        duckMusic()
+      }
+      utterance.onend = () => {
+        console.info('[Lúcida TTS] onend ✓')
+        unduckMusic()
+      }
+      utterance.onerror = (e) => {
+        console.error('[Lúcida TTS] onerror:', e.error)
+        unduckMusic()
+      }
 
       window.speechSynthesis.speak(utterance)
       console.info('[Lúcida TTS] speak() llamado.')
