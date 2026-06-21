@@ -1,7 +1,9 @@
+import { useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { CountdownTimer } from '../../components/ui/CountdownTimer'
 import { SessionSummary } from '../../components/SessionSummary'
 import { useModeConfig } from '../../modes/modeContext'
 import { useNav } from '../../navigation/navContext'
@@ -14,38 +16,69 @@ import {
   COLOR_LABEL,
   type SequenceColorId,
 } from './sequenceEngine'
+import { GameTimePicker } from '../shared/GameTimePicker'
+import type { TimedConfig } from '../shared/timedConfig'
 
-export function SequenceScreen() {
+// ── Juego de Secuencias ────────────────────────────────────────────────────────
+
+function SequenceGameView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
   const config = useModeConfig()
-  const { back } = useNav()
   const reduce = useReducedMotion()
   const seqCfg = config.activities.sequence
   const pointsPerCorrect = config.scoring.enabled ? config.scoring.pointsPerCorrect : 0
 
   const game = useSequenceGame(seqCfg, pointsPerCorrect)
 
-  if (game.phase === 'done') {
+  // Ráfaga: countdown total
+  const [rafagaExpired, setRafagaExpired] = useState(false)
+  const [restartCount, setRestartCount] = useState(0)
+  const isRafaga = timedConfig.mode === 'rafaga'
+  const isPulso = timedConfig.mode === 'pulso'
+
+  // Pulso: key para resetear el timer de input al iniciar cada nueva fase input
+  const inputKeyRef = useRef(0)
+  const prevPhase = useRef(game.phase)
+  if (prevPhase.current !== 'input' && game.phase === 'input') {
+    inputKeyRef.current += 1
+  }
+  prevPhase.current = game.phase
+
+  if (game.phase === 'done' || rafagaExpired) {
     return (
       <SessionSummary
-        headline="¡Sesión completa!"
+        headline={rafagaExpired ? '¡Tiempo!' : '¡Sesión completa!'}
         subline={
-          <>
-            Completaste <strong>{game.roundsWon}</strong> de {seqCfg.maxRounds} secuencias.
-          </>
+          isRafaga ? (
+            <>
+              Completaste <strong>{game.roundsWon}</strong> secuencias en {timedConfig.seconds}s.
+            </>
+          ) : (
+            <>
+              Completaste <strong>{game.roundsWon}</strong> de {seqCfg.maxRounds} secuencias.
+            </>
+          )
         }
         stats={[
           { label: 'Puntaje', value: game.score, accent: 'agil' },
-          { label: 'Rondas', value: `${game.roundsWon}/${seqCfg.maxRounds}`, accent: 'sereno' },
+          {
+            label: 'Rondas',
+            value: isRafaga ? game.roundsWon : `${game.roundsWon}/${seqCfg.maxRounds}`,
+            accent: 'sereno',
+          },
         ]}
         record={{
           activity: 'sequence',
           mode: config.id,
           correct: game.roundsWon,
-          total: seqCfg.maxRounds,
+          total: isRafaga ? game.roundsWon : seqCfg.maxRounds,
           score: game.score,
         }}
-        onAgain={game.restart}
-        onHome={back}
+        onAgain={() => {
+          game.restart()
+          setRafagaExpired(false)
+          setRestartCount((c) => c + 1)
+        }}
+        onHome={onHome}
         againLabel="Jugar de nuevo"
       />
     )
@@ -57,8 +90,6 @@ export function SequenceScreen() {
   const isInput = game.phase === 'input'
   const isSuccess = game.phase === 'success'
   const isError = game.phase === 'error'
-
-  // Grilla de botones: 1 columna en Calmo (3 colores), 2×2 en Ágil/Sereno (4 colores).
   const useGrid = colors.length >= 4
 
   return (
@@ -99,27 +130,49 @@ export function SequenceScreen() {
             }
           />
           {/* Progreso de rondas */}
-          <div className="flex items-center gap-2">
-            {Array.from({ length: seqCfg.maxRounds }, (_, i) => (
-              <span
-                key={i}
-                className={`h-2 flex-1 rounded-full transition-colors ${
-                  i < game.roundsWon
-                    ? 'bg-positive'
-                    : i === game.roundsWon
-                      ? 'bg-sereno'
-                      : 'bg-border'
-                }`}
-              />
-            ))}
-          </div>
+          {!isRafaga && (
+            <div className="flex items-center gap-2">
+              {Array.from({ length: seqCfg.maxRounds }, (_, i) => (
+                <span
+                  key={i}
+                  className={`h-2 flex-1 rounded-full transition-colors ${
+                    i < game.roundsWon
+                      ? 'bg-positive'
+                      : i === game.roundsWon
+                        ? 'bg-sereno'
+                        : 'bg-border'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
           <p className="text-center font-serif text-[20px] font-semibold text-ink-strong">
             {isPlaying ? 'Mirá...' : isInput ? '¿Cuál era el orden?' : ' '}
           </p>
         </>
       )}
 
-      {/* Indicador de progreso de entrada (solo en fase input) */}
+      {/* Ráfaga: barra de tiempo total */}
+      {isRafaga && (
+        <CountdownTimer
+          totalSeconds={timedConfig.seconds}
+          questionKey={restartCount}
+          onExpire={() => setRafagaExpired(true)}
+          paused={false}
+        />
+      )}
+
+      {/* Pulso: countdown durante fase de input */}
+      {isPulso && isInput && (
+        <CountdownTimer
+          totalSeconds={timedConfig.seconds}
+          questionKey={inputKeyRef.current}
+          onExpire={game.inputTimeout}
+          paused={false}
+        />
+      )}
+
+      {/* Indicador de progreso de entrada */}
       {isInput && game.sequence.length > 0 && (
         <div className="flex justify-center gap-2" aria-label="Progreso de entrada">
           {game.sequence.map((_, i) => (
@@ -199,5 +252,28 @@ export function SequenceScreen() {
         )}
       </div>
     </main>
+  )
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────────
+
+export function SequenceScreen() {
+  const config = useModeConfig()
+  const { back } = useNav()
+
+  const [timedConfig, setTimedConfig] = useState<TimedConfig | null>(
+    config.id === 'calmo' ? { mode: 'libre', seconds: 0 } : null,
+  )
+
+  if (!timedConfig) {
+    return <GameTimePicker title="Secuencias" onStart={setTimedConfig} />
+  }
+
+  return (
+    <SequenceGameView
+      key={timedConfig.mode + timedConfig.seconds}
+      timedConfig={timedConfig}
+      onHome={back}
+    />
   )
 }

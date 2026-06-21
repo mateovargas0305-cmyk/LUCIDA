@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -17,12 +17,161 @@ import {
   type StroopTrial,
   type StroopColorSlot,
 } from './stroopEngine'
+import { GameTimePicker } from '../shared/GameTimePicker'
+import { useRafagaSession } from '../shared/useRafagaSession'
+import type { TimedConfig } from '../shared/timedConfig'
 
 type OptionStatus = 'idle' | 'correct' | 'wrongChosen' | 'dimmed'
 
-export function StroopScreen() {
+// ── Vista Ráfaga ───────────────────────────────────────────────────────────────
+
+function StroopRafagaView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
   const config = useModeConfig()
-  const { back } = useNav()
+  const reduce = useReducedMotion()
+  const stroopCfg = config.activities.stroop
+
+  const session = useRafagaSession<StroopTrial>({
+    buildPool: () => buildStroopTrials(stroopCfg),
+    totalSeconds: timedConfig.seconds,
+    lockMs: 500,
+    pointsPerCorrect: config.scoring.enabled ? config.scoring.pointsPerCorrect : 1,
+  })
+
+  if (session.finished) {
+    return (
+      <SessionSummary
+        headline="¡Tiempo!"
+        subline={
+          <>
+            Acertaste{' '}
+            <strong>
+              {session.correct} de {session.total}
+            </strong>{' '}
+            en {timedConfig.seconds}s.
+          </>
+        }
+        stats={[
+          { label: 'Correctas', value: session.correct, accent: 'sereno' },
+          { label: 'Puntaje', value: session.score, accent: 'agil' },
+        ]}
+        record={{
+          activity: 'stroop',
+          mode: config.id,
+          correct: session.correct,
+          total: session.total,
+          score: session.score,
+        }}
+        onAgain={session.restart}
+        onHome={onHome}
+      />
+    )
+  }
+
+  const trial = session.round
+  const pct = (session.timeLeft / timedConfig.seconds) * 100
+
+  const statusOf = (i: number): OptionStatus => {
+    if (!session.locked) return 'idle'
+    if (i === trial.correctIndex) return 'correct'
+    if (i === session.selectedIndex) return 'wrongChosen'
+    return 'dimmed'
+  }
+
+  return (
+    <main
+      className="flex flex-1 flex-col px-6 pb-9 pt-8"
+      style={{ rowGap: config.controls.blockGapPx }}
+    >
+      <ScreenHeader
+        title="Stroop"
+        right={
+          <span className="flex items-center gap-1.5 rounded-full bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+            <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+            {session.score}
+          </span>
+        }
+      />
+
+      <div className="h-2.5 overflow-hidden rounded-pill bg-border" aria-hidden>
+        <motion.div
+          className={`h-full rounded-pill transition-colors ${pct <= 33 ? 'bg-calmo' : 'bg-agil'}`}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.9, ease: 'linear' }}
+        />
+      </div>
+
+      <p className="text-center text-[14px] font-bold text-ink-soft">
+        ¿De qué color está escrita la palabra?
+      </p>
+
+      <div className="flex flex-1 items-center justify-center overflow-hidden">
+        <span
+          className={`select-none font-serif font-bold leading-none ${COLOR_TEXT_CLASS[trial.inkSlot]}`}
+          style={{ fontSize: 'clamp(2rem, 10vw, 4.5rem)', whiteSpace: 'nowrap' }}
+          aria-label={`La palabra "${COLOR_NAME[trial.wordSlot]}" escrita en color ${COLOR_NAME[trial.inkSlot]}`}
+        >
+          {COLOR_NAME[trial.wordSlot].toUpperCase()}
+        </span>
+      </div>
+
+      <ul className="grid grid-cols-2 gap-3">
+        {trial.optionSlots.map((colorSlot: StroopColorSlot, i) => {
+          const status = statusOf(i)
+          const isCorrect = status === 'correct'
+          const isWrong = status === 'wrongChosen'
+          const baseClass = stroopCfg.coloredOptionButtons
+            ? COLOR_BUTTON_CLASS[colorSlot]
+            : 'bg-surface border-border text-ink-strong'
+          const stateOverride = isCorrect
+            ? 'bg-positive-soft border-positive text-positive-ink'
+            : isWrong
+              ? 'bg-game-1 border-game-1-strong text-game-1-ink'
+              : status === 'dimmed'
+                ? 'opacity-50'
+                : ''
+          return (
+            <li key={colorSlot}>
+              <motion.button
+                onClick={() => session.select(i)}
+                disabled={session.locked}
+                whileTap={reduce || session.locked ? undefined : { scale: 0.97 }}
+                className={`flex w-full items-center justify-center gap-3 rounded-xl border-2 font-serif font-semibold transition-colors ${baseClass} ${stateOverride}`}
+                style={{
+                  minHeight: config.controls.primaryButtonMinHeightPx,
+                  fontSize: tpx(config.typography.controlTextPx - 2),
+                }}
+              >
+                {COLOR_NAME[colorSlot]}
+                {isCorrect && (
+                  <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-positive text-[18px] text-surface" aria-hidden>
+                    ✓
+                  </span>
+                )}
+              </motion.button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {session.locked && (
+        <p
+          className={`text-center text-[15px] font-bold ${
+            session.lastCorrect ? 'text-positive' : 'text-game-1-strong'
+          }`}
+        >
+          {session.lastCorrect
+            ? config.feedback.successMessage
+            : `Era ${COLOR_NAME[trial.inkSlot]}. ${config.feedback.errorMessage}`}
+        </p>
+      )}
+    </main>
+  )
+}
+
+// ── Vista Libre / Pulso ────────────────────────────────────────────────────────
+
+function StroopLibrePulsoView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
+  const config = useModeConfig()
   const reduce = useReducedMotion()
   const stroopCfg = config.activities.stroop
 
@@ -77,7 +226,7 @@ export function StroopScreen() {
           score: session.score,
         }}
         onAgain={session.restart}
-        onHome={back}
+        onHome={onHome}
       />
     )
   }
@@ -85,7 +234,11 @@ export function StroopScreen() {
   const trial = session.current
   const big = !config.scoring.enabled
   const isLast = session.index >= session.total - 1
-  const showTimer = config.timing.timerAllowed && config.timing.secondsPerQuestion !== null
+
+  const isPulso = timedConfig.mode === 'pulso'
+  const timerSeconds = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
+  const showTimer = isPulso || (config.timing.timerAllowed && timerSeconds !== null)
+
   const answeredCorrectly =
     session.locked && !session.timedOut && session.selected === trial.correctIndex
 
@@ -98,7 +251,7 @@ export function StroopScreen() {
 
   const handleSelect = (i: number) => {
     const elapsed = Date.now() - questionStartRef.current
-    const secs = config.timing.secondsPerQuestion
+    const secs = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
     const speedBonus =
       config.scoring.speedBonusEnabled &&
       secs !== null &&
@@ -167,40 +320,32 @@ export function StroopScreen() {
         </>
       )}
 
-      {showTimer && (
+      {showTimer && timerSeconds !== null && (
         <CountdownTimer
-          totalSeconds={config.timing.secondsPerQuestion!}
+          totalSeconds={timerSeconds}
           questionKey={session.index}
           onExpire={session.timeout}
           paused={session.locked}
         />
       )}
 
-      {/* Instrucción en modos con puntaje */}
       {!big && (
         <p className="text-center text-[14px] font-bold text-ink-soft">
           ¿De qué color está escrita la palabra?
         </p>
       )}
 
-      {/* La palabra Stroop: texto en color de tinta */}
       <div className="flex flex-1 items-center justify-center overflow-hidden">
         <span
           className={`select-none font-serif font-bold leading-none ${COLOR_TEXT_CLASS[trial.inkSlot]}`}
-          style={{
-            fontSize: 'clamp(2rem, 10vw, 4.5rem)',
-            whiteSpace: 'nowrap',
-          }}
+          style={{ fontSize: 'clamp(2rem, 10vw, 4.5rem)', whiteSpace: 'nowrap' }}
           aria-label={`La palabra "${COLOR_NAME[trial.wordSlot]}" escrita en color ${COLOR_NAME[trial.inkSlot]}`}
         >
           {COLOR_NAME[trial.wordSlot].toUpperCase()}
         </span>
       </div>
 
-      {/* Opciones */}
-      <ul
-        className={big ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-3'}
-      >
+      <ul className={big ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-3'}>
         {trial.optionSlots.map((colorSlot: StroopColorSlot, i) => {
           const status = statusOf(i)
           const isCorrect = status === 'correct'
@@ -244,7 +389,6 @@ export function StroopScreen() {
         })}
       </ul>
 
-      {/* Feedback + avance */}
       <div className="flex flex-col gap-3 pt-1">
         {session.retryHint && !session.locked && (
           <FeedbackBanner
@@ -298,4 +442,25 @@ export function StroopScreen() {
       </div>
     </main>
   )
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────────
+
+export function StroopScreen() {
+  const config = useModeConfig()
+  const { back } = useNav()
+
+  const [timedConfig, setTimedConfig] = useState<TimedConfig | null>(
+    config.id === 'calmo' ? { mode: 'libre', seconds: 0 } : null,
+  )
+
+  if (!timedConfig) {
+    return <GameTimePicker title="Stroop" onStart={setTimedConfig} />
+  }
+
+  if (timedConfig.mode === 'rafaga') {
+    return <StroopRafagaView timedConfig={timedConfig} onHome={back} />
+  }
+
+  return <StroopLibrePulsoView timedConfig={timedConfig} onHome={back} />
 }

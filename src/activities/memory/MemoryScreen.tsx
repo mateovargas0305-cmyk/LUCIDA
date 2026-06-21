@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
+import { CountdownTimer } from '../../components/ui/CountdownTimer'
 import { SessionSummary } from '../../components/SessionSummary'
 import { NatureIcon } from '../../components/icons/NatureIcon'
 import { useModeConfig } from '../../modes/modeContext'
@@ -8,6 +9,8 @@ import { useNav } from '../../navigation/navContext'
 import { tpx } from '../../lib/typography'
 import { useMemoryGame } from './useMemoryGame'
 import { getBestMemoryTime } from '../../db/sessions'
+import { GameTimePicker } from '../shared/GameTimePicker'
+import type { TimedConfig } from '../shared/timedConfig'
 
 function formatTime(ms: number): string {
   const total = Math.floor(ms / 1000)
@@ -16,9 +19,10 @@ function formatTime(ms: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function MemoryScreen() {
+// ── Juego de Memoria ───────────────────────────────────────────────────────────
+
+function MemoryGameView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
   const config = useModeConfig()
-  const { back } = useNav()
   const reduce = useReducedMotion()
   const memCfg = config.activities.memory
   const game = useMemoryGame(memCfg)
@@ -29,56 +33,92 @@ export function MemoryScreen() {
     void getBestMemoryTime(config.id, memCfg.pairs).then(setBestMs)
   }, [memCfg.showTimer, config.id, memCfg.pairs])
 
-  if (game.won) {
+  // Pulso: countdown desde que se da vuelta la primera carta
+  const [flipKey, setFlipKey] = useState(0)
+  const prevFlipCount = useRef(0)
+  useEffect(() => {
+    if (prevFlipCount.current !== 1 && game.flipCount === 1) {
+      setFlipKey((k) => k + 1)
+    }
+    prevFlipCount.current = game.flipCount
+  }, [game.flipCount])
+
+  // Ráfaga: countdown total en pantalla
+  const [rafagaExpired, setRafagaExpired] = useState(false)
+  const [restartCount, setRestartCount] = useState(0)
+
+  const isPulso = timedConfig.mode === 'pulso'
+  const isRafaga = timedConfig.mode === 'rafaga'
+
+  // Mostrar resumen si ganaron o si venció el tiempo en Ráfaga
+  if (game.won || rafagaExpired) {
     const isNewRecord =
       memCfg.showTimer &&
       game.elapsedMs > 0 &&
+      !rafagaExpired &&
       (bestMs === null || game.elapsedMs < bestMs)
+
+    const rafagaSubline = (
+      <>
+        Encontraste <strong>{game.pairsFound}</strong> de {game.totalPairs} parejas en{' '}
+        {timedConfig.seconds}s.
+      </>
+    )
+    const normalSubline = memCfg.showTimer ? (
+      <>
+        {game.totalPairs} parejas en <strong>{formatTime(game.elapsedMs)}</strong>
+        {bestMs !== null && !isNewRecord && <> · récord: {formatTime(bestMs)}</>}
+      </>
+    ) : (
+      <>
+        {game.totalPairs} parejas en <strong>{game.moves} movimientos</strong>.
+      </>
+    )
 
     return (
       <SessionSummary
-        headline={isNewRecord ? '¡Nuevo récord!' : '¡Tablero completo!'}
-        subline={
-          memCfg.showTimer ? (
-            <>
-              {game.totalPairs} parejas en{' '}
-              <strong>{formatTime(game.elapsedMs)}</strong>
-              {bestMs !== null && !isNewRecord && (
-                <> · récord: {formatTime(bestMs)}</>
-              )}
-            </>
-          ) : (
-            <>
-              {game.totalPairs} parejas en{' '}
-              <strong>{game.moves} movimientos</strong>.
-            </>
-          )
+        headline={
+          rafagaExpired
+            ? '¡Tiempo!'
+            : isNewRecord
+              ? '¡Nuevo récord!'
+              : '¡Tablero completo!'
         }
+        subline={isRafaga ? rafagaSubline : normalSubline}
         stats={
-          memCfg.showTimer
+          isRafaga
             ? [
-                { label: 'Tiempo', value: formatTime(game.elapsedMs), accent: 'agil' as const },
-                {
-                  label: isNewRecord ? '¡Récord!' : 'Récord anterior',
-                  value: bestMs !== null && !isNewRecord ? formatTime(bestMs) : '—',
-                  accent: 'sereno' as const,
-                },
+                { label: 'Parejas', value: game.pairsFound, accent: 'sereno' as const },
+                { label: 'Tiempo', value: `${timedConfig.seconds}s`, accent: 'agil' as const },
               ]
-            : [
-                { label: 'Parejas', value: game.totalPairs, accent: 'sereno' as const },
-                { label: 'Movimientos', value: game.moves, accent: 'agil' as const },
-              ]
+            : memCfg.showTimer
+              ? [
+                  { label: 'Tiempo', value: formatTime(game.elapsedMs), accent: 'agil' as const },
+                  {
+                    label: isNewRecord ? '¡Récord!' : 'Récord anterior',
+                    value: bestMs !== null && !isNewRecord ? formatTime(bestMs) : '—',
+                    accent: 'sereno' as const,
+                  },
+                ]
+              : [
+                  { label: 'Parejas', value: game.totalPairs, accent: 'sereno' as const },
+                  { label: 'Movimientos', value: game.moves, accent: 'agil' as const },
+                ]
         }
         record={{
           activity: 'memory',
           mode: config.id,
-          correct: game.totalPairs,
+          correct: game.pairsFound,
           total: game.totalPairs,
           score: game.pairsFound * config.scoring.pointsPerCorrect,
-          durationMs: memCfg.showTimer ? game.elapsedMs : undefined,
+          durationMs: memCfg.showTimer && !rafagaExpired ? game.elapsedMs : undefined,
         }}
-        onAgain={game.restart}
-        onHome={back}
+        onAgain={() => {
+          game.restart()
+          setRafagaExpired(false)
+          setRestartCount((c) => c + 1)
+        }}
+        onHome={onHome}
         againLabel="Jugar de nuevo"
       />
     )
@@ -138,6 +178,26 @@ export function MemoryScreen() {
             </p>
           )}
         </>
+      )}
+
+      {/* Ráfaga: barra de tiempo total */}
+      {isRafaga && (
+        <CountdownTimer
+          totalSeconds={timedConfig.seconds}
+          questionKey={restartCount}
+          onExpire={() => setRafagaExpired(true)}
+          paused={false}
+        />
+      )}
+
+      {/* Pulso: countdown por carta cuando hay una dada vuelta */}
+      {isPulso && game.flipCount === 1 && (
+        <CountdownTimer
+          totalSeconds={timedConfig.seconds}
+          questionKey={flipKey}
+          onExpire={game.resetFlip}
+          paused={game.flipCount !== 1}
+        />
       )}
 
       <ul
@@ -201,4 +261,21 @@ export function MemoryScreen() {
       )}
     </main>
   )
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────────
+
+export function MemoryScreen() {
+  const config = useModeConfig()
+  const { back } = useNav()
+
+  const [timedConfig, setTimedConfig] = useState<TimedConfig | null>(
+    config.id === 'calmo' ? { mode: 'libre', seconds: 0 } : null,
+  )
+
+  if (!timedConfig) {
+    return <GameTimePicker title="Memoria" onStart={setTimedConfig} />
+  }
+
+  return <MemoryGameView key={timedConfig.mode + timedConfig.seconds} timedConfig={timedConfig} onHome={back} />
 }

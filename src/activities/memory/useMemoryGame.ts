@@ -7,6 +7,10 @@ export interface MemoryGame {
   isUp: (index: number) => boolean
   isMatched: (index: number) => boolean
   flip: (index: number) => void
+  /** Cuántas cartas están dadas vuelta y esperando pareja (0, 1 o 2). */
+  flipCount: number
+  /** Descarta la carta única que esté dada vuelta (usada por Pulso al agotar el tiempo). */
+  resetFlip: () => void
   pairsFound: number
   totalPairs: number
   moves: number
@@ -70,6 +74,10 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
     [cfg.showTimer],
   )
 
+  const resetFlip = useCallback(() => {
+    setFlipped([])
+  }, [])
+
   const restart = useCallback(() => {
     setCards(buildMemoryDeck(cfg))
     setFlipped([])
@@ -88,6 +96,8 @@ export function useMemoryGame(cfg: MemoryActivityConfig): MemoryGame {
       if (matched.includes(i)) return
       flip(i)
     },
+    flipCount: flipped.length,
+    resetFlip,
     pairsFound: matched.length / 2,
     totalPairs: cfg.pairs,
     moves,

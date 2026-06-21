@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -10,6 +10,9 @@ import { useNav } from '../../navigation/navContext'
 import { useChoiceSession } from '../shared/useChoiceSession'
 import { tpx } from '../../lib/typography'
 import { generateCalcProblems, type CalcProblem } from './calcEngine'
+import { GameTimePicker } from '../shared/GameTimePicker'
+import { useRafagaSession } from '../shared/useRafagaSession'
+import type { TimedConfig } from '../shared/timedConfig'
 
 type OptionStatus = 'idle' | 'correct' | 'wrongChosen' | 'dimmed'
 
@@ -20,9 +23,159 @@ const OPTION_BOX: Record<OptionStatus, string> = {
   dimmed: 'bg-surface border-border text-ink-muted',
 }
 
-export function CalcScreen() {
+// ── Vista Ráfaga ───────────────────────────────────────────────────────────────
+
+function CalcRafagaView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
   const config = useModeConfig()
-  const { back } = useNav()
+  const reduce = useReducedMotion()
+  const calcCfg = config.activities.calc
+
+  const session = useRafagaSession<CalcProblem>({
+    buildPool: () => generateCalcProblems(calcCfg),
+    totalSeconds: timedConfig.seconds,
+    lockMs: 600,
+    pointsPerCorrect: config.scoring.enabled ? config.scoring.pointsPerCorrect : 1,
+  })
+
+  if (session.finished) {
+    return (
+      <SessionSummary
+        headline="¡Tiempo!"
+        subline={
+          <>
+            Resolviste{' '}
+            <strong>
+              {session.correct} de {session.total}
+            </strong>{' '}
+            bien en {timedConfig.seconds}s.
+          </>
+        }
+        stats={[
+          { label: 'Correctas', value: session.correct, accent: 'sereno' },
+          { label: 'Puntaje', value: session.score, accent: 'agil' },
+        ]}
+        record={{
+          activity: 'calc',
+          mode: config.id,
+          correct: session.correct,
+          total: session.total,
+          score: session.score,
+        }}
+        onAgain={session.restart}
+        onHome={onHome}
+      />
+    )
+  }
+
+  const problem = session.round
+  const big = calcCfg.optionCount <= 3
+  const pct = (session.timeLeft / timedConfig.seconds) * 100
+  const exprFont = Math.round(config.typography.headingPx * 1.8)
+
+  const statusOf = (i: number): OptionStatus => {
+    if (!session.locked) return 'idle'
+    if (i === problem.correctIndex) return 'correct'
+    if (i === session.selectedIndex) return 'wrongChosen'
+    return 'dimmed'
+  }
+
+  return (
+    <main
+      className="flex flex-1 flex-col px-6 pb-9 pt-8"
+      style={{ rowGap: config.controls.blockGapPx }}
+    >
+      <ScreenHeader
+        title="Cálculo"
+        right={
+          <span className="flex items-center gap-2 rounded-pill bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+            <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+            {session.score}
+          </span>
+        }
+      />
+
+      <div className="h-2.5 overflow-hidden rounded-pill bg-border" aria-hidden>
+        <motion.div
+          className={`h-full rounded-pill transition-colors ${pct <= 33 ? 'bg-calmo' : 'bg-agil'}`}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.9, ease: 'linear' }}
+        />
+      </div>
+
+      <div className="rounded-3xl border border-border bg-surface px-5 py-8 text-center shadow-card">
+        <div
+          className="font-sans font-bold uppercase tracking-wide text-ink-soft"
+          style={{ fontSize: tpx(config.typography.captionPx) }}
+        >
+          ¿Cuánto es?
+        </div>
+        <div
+          className="mt-2 font-serif font-bold leading-none text-ink-strong"
+          style={{ fontSize: tpx(exprFont) }}
+          aria-label={problem.prompt}
+        >
+          {problem.prompt}
+        </div>
+      </div>
+
+      <ul
+        className={big ? 'flex flex-col' : 'grid grid-cols-2'}
+        style={{ gap: big ? config.controls.blockGapPx - 6 : 11 }}
+      >
+        {problem.options.map((value, i) => {
+          const status = statusOf(i)
+          return (
+            <li key={i}>
+              <motion.button
+                onClick={() => session.select(i)}
+                disabled={session.locked}
+                whileTap={reduce || session.locked ? undefined : { scale: 0.98 }}
+                className={`flex w-full items-center justify-center gap-3 border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]} ${
+                  big ? 'rounded-2xl' : 'rounded-xl'
+                }`}
+                style={{
+                  minHeight: big
+                    ? config.controls.tapTargetMinPx + 12
+                    : config.controls.primaryButtonMinHeightPx + 10,
+                  fontSize: big
+                    ? tpx(config.typography.headingPx)
+                    : tpx(config.typography.headingPx - 2),
+                }}
+              >
+                <span>{value}</span>
+                {status === 'correct' && (
+                  <span
+                    className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-positive text-[20px] text-surface"
+                    aria-hidden
+                  >
+                    ✓
+                  </span>
+                )}
+              </motion.button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {session.locked && (
+        <p
+          className={`mt-auto text-center text-[15px] font-bold ${
+            session.lastCorrect ? 'text-positive' : 'text-calmo-strong'
+          }`}
+        >
+          {session.lastCorrect
+            ? config.feedback.successMessage
+            : `Era ${problem.answer}. ${config.feedback.errorMessage}`}
+        </p>
+      )}
+    </main>
+  )
+}
+
+// ── Vista Libre / Pulso ────────────────────────────────────────────────────────
+
+function CalcLibrePulsoView({ timedConfig, onHome }: { timedConfig: TimedConfig; onHome: () => void }) {
+  const config = useModeConfig()
   const reduce = useReducedMotion()
   const calcCfg = config.activities.calc
 
@@ -77,7 +230,7 @@ export function CalcScreen() {
           score: session.score,
         }}
         onAgain={session.restart}
-        onHome={back}
+        onHome={onHome}
       />
     )
   }
@@ -86,8 +239,11 @@ export function CalcScreen() {
   const big = calcCfg.optionCount <= 3
   const isLast = session.index >= session.total - 1
   const exprFont = Math.round(config.typography.headingPx * 1.8)
-  const showTimer =
-    config.timing.timerAllowed && config.timing.secondsPerQuestion !== null
+
+  const isPulso = timedConfig.mode === 'pulso'
+  const timerSeconds = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
+  const showTimer = isPulso || (config.timing.timerAllowed && timerSeconds !== null)
+
   const answeredCorrectly =
     session.locked && !session.timedOut && session.selected === problem.correctIndex
 
@@ -100,7 +256,7 @@ export function CalcScreen() {
 
   const handleSelect = (i: number) => {
     const elapsed = Date.now() - questionStartRef.current
-    const secs = config.timing.secondsPerQuestion
+    const secs = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
     const speedBonus =
       config.scoring.speedBonusEnabled &&
       secs !== null &&
@@ -151,16 +307,15 @@ export function CalcScreen() {
         </div>
       )}
 
-      {showTimer && (
+      {showTimer && timerSeconds !== null && (
         <CountdownTimer
-          totalSeconds={config.timing.secondsPerQuestion!}
+          totalSeconds={timerSeconds}
           questionKey={session.index}
           onExpire={session.timeout}
           paused={session.locked}
         />
       )}
 
-      {/* Operación */}
       <div className="rounded-3xl border border-border bg-surface px-5 py-8 text-center shadow-card">
         <div
           className="font-sans font-bold uppercase tracking-wide text-ink-soft"
@@ -177,7 +332,6 @@ export function CalcScreen() {
         </div>
       </div>
 
-      {/* Opciones */}
       <ul
         className={big ? 'flex flex-col' : 'grid grid-cols-2'}
         style={{ gap: big ? config.controls.blockGapPx - 6 : 11 }}
@@ -222,7 +376,6 @@ export function CalcScreen() {
         })}
       </ul>
 
-      {/* Feedback + avance */}
       <div className="mt-auto flex flex-col gap-3 pt-2">
         {session.retryHint && !session.locked && (
           <FeedbackBanner
@@ -280,4 +433,25 @@ export function CalcScreen() {
       </div>
     </main>
   )
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────────
+
+export function CalcScreen() {
+  const config = useModeConfig()
+  const { back } = useNav()
+
+  const [timedConfig, setTimedConfig] = useState<TimedConfig | null>(
+    config.id === 'calmo' ? { mode: 'libre', seconds: 0 } : null,
+  )
+
+  if (!timedConfig) {
+    return <GameTimePicker title="Cálculo" onStart={setTimedConfig} />
+  }
+
+  if (timedConfig.mode === 'rafaga') {
+    return <CalcRafagaView timedConfig={timedConfig} onHome={back} />
+  }
+
+  return <CalcLibrePulsoView timedConfig={timedConfig} onHome={back} />
 }

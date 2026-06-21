@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
 import { FeedbackBanner } from '../../components/ui/FeedbackBanner'
+import { CountdownTimer } from '../../components/ui/CountdownTimer'
 import { SessionSummary } from '../../components/SessionSummary'
 import type { ModeConfig } from '../../modes/types'
 import { useNav } from '../../navigation/navContext'
@@ -10,10 +12,12 @@ import { buildAttentionRounds, shapeStyles, type AttentionRound } from './attent
 
 interface Props {
   config: ModeConfig
+  /** Cuando se pasa (modo Pulso), muestra un countdown por ronda. */
+  pulsoSeconds?: number
 }
 
-/** Vista clásica de rondas: N turnos, sin presión de tiempo. Usada por Calmo. */
-export function AttentionRoundsView({ config }: Props) {
+/** Vista clásica de rondas: N turnos, con o sin timer por ronda. */
+export function AttentionRoundsView({ config, pulsoSeconds }: Props) {
   const { back } = useNav()
   const reduce = useReducedMotion()
   const attCfg = config.activities.attention
@@ -26,6 +30,13 @@ export function AttentionRoundsView({ config }: Props) {
     streakBonusThreshold: config.scoring.streakBonusThreshold,
     streakBonusPoints: config.scoring.streakBonusPoints,
   })
+
+  const { timedOut, next } = session
+  useEffect(() => {
+    if (!timedOut) return
+    const id = setTimeout(() => next(), 1300)
+    return () => clearTimeout(id)
+  }, [timedOut, next])
 
   if (session.finished) {
     return (
@@ -78,6 +89,15 @@ export function AttentionRoundsView({ config }: Props) {
       >
         Tocá el diferente
       </h1>
+
+      {pulsoSeconds !== undefined && (
+        <CountdownTimer
+          totalSeconds={pulsoSeconds}
+          questionKey={session.index}
+          onExpire={session.timeout}
+          paused={session.locked}
+        />
+      )}
 
       <ul
         className="grid flex-1 content-center justify-items-center"
@@ -132,19 +152,25 @@ export function AttentionRoundsView({ config }: Props) {
         )}
 
         {session.locked && (
-          <FeedbackBanner
-            variant={answeredCorrectly ? 'success' : 'gentle'}
-            message={
-              answeredCorrectly
-                ? config.feedback.successMessage
-                : config.feedback.errorMessage
-            }
-            fontSize={config.typography.controlTextPx - 2}
-            withCheck={answeredCorrectly}
-          />
+          session.timedOut ? (
+            <p className="text-center text-[15px] font-bold text-calmo-strong">
+              Tiempo agotado. {config.feedback.errorMessage}
+            </p>
+          ) : (
+            <FeedbackBanner
+              variant={answeredCorrectly ? 'success' : 'gentle'}
+              message={
+                answeredCorrectly
+                  ? config.feedback.successMessage
+                  : config.feedback.errorMessage
+              }
+              fontSize={config.typography.controlTextPx - 2}
+              withCheck={answeredCorrectly}
+            />
+          )
         )}
 
-        {session.locked && (
+        {!session.timedOut && session.locked && (
           <PrimaryButton onClick={session.next} disabled={!session.locked}>
             {isLast ? 'Ver resultado' : 'Continuar'} ›
           </PrimaryButton>

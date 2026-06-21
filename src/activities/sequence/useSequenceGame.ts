@@ -31,6 +31,7 @@ type Action =
   | { type: 'error' }
   | { type: 'retry' }
   | { type: 'done' }
+  | { type: 'input_timeout' }
   | { type: 'restart'; cfg: SequenceActivityConfig }
 
 function makeInitial(cfg: SequenceActivityConfig): State {
@@ -86,6 +87,9 @@ function reducer(state: State, action: Action): State {
       return { ...state, phase: 'playing', userInput: [], highlightIndex: null }
     case 'done':
       return { ...state, phase: 'done' }
+    case 'input_timeout':
+      if (state.phase !== 'input') return state
+      return { ...state, phase: 'error', highlightIndex: null }
     case 'restart':
       return makeInitial(action.cfg)
   }
@@ -103,6 +107,8 @@ export interface SequenceGame {
   inputProgress: number
   start: () => void
   tap: (color: SequenceColorId) => void
+  /** Fuerza error en la fase de input (Pulso: tiempo agotado). */
+  inputTimeout: () => void
   restart: () => void
 }
 
@@ -179,6 +185,16 @@ export function useSequenceGame(
     [state.phase, state.sequence, state.userInput, cfg.retryOnError, pointsPerCorrect],
   )
 
+  const inputTimeout = useCallback(() => {
+    dispatch({ type: 'input_timeout' })
+    // After error feedback, same behavior as a wrong tap
+    if (cfg.retryOnError) {
+      setTimeout(() => dispatch({ type: 'retry' }), 1500)
+    } else {
+      setTimeout(() => dispatch({ type: 'done' }), 1500)
+    }
+  }, [cfg.retryOnError])
+
   const restart = useCallback(() => {
     dispatch({ type: 'restart', cfg })
   }, [cfg])
@@ -194,6 +210,7 @@ export function useSequenceGame(
     inputProgress: state.userInput.length,
     start,
     tap,
+    inputTimeout,
     restart,
   }
 }
