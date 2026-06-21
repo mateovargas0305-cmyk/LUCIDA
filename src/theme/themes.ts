@@ -73,6 +73,10 @@ const bosque: Theme = {
     calmo: '176 110 64',
     calmoStrong: '128 72 36',
     calmoSoft: '235 222 205',
+    // positive armoniza con el verde del tema (igual que sereno en tierra)
+    positive: '96 138 110',
+    positiveSoft: '216 230 217',
+    positiveInk: '44 80 56',
   },
 }
 
@@ -90,6 +94,10 @@ const frio: Theme = {
     calmo: '150 118 158',
     calmoStrong: '98 70 108',
     calmoSoft: '230 222 236',
+    // positive armoniza con el teal del tema
+    positive: '108 150 150',
+    positiveSoft: '214 232 232',
+    positiveInk: '40 80 80',
   },
 }
 

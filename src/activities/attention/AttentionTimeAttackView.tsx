@@ -10,14 +10,14 @@ import { getBestAttentionScore } from '../../db/sessions'
 
 interface Props {
   config: ModeConfig
+  totalSeconds: number
 }
 
 /** Vista time-attack: tiempo total fijo, se cuentan aciertos. Ágil y Sereno. */
-export function AttentionTimeAttackView({ config }: Props) {
+export function AttentionTimeAttackView({ config, totalSeconds }: Props) {
   const { back } = useNav()
   const reduce = useReducedMotion()
   const attCfg = config.activities.attention
-  const totalSeconds = attCfg.sessionDurationSeconds ?? 15
   const [bestScore, setBestScore] = useState<number | null>(null)
   const savedRef = useRef(false)
 

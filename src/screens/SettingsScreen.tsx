@@ -127,13 +127,49 @@ export function SettingsScreen() {
       </section>
 
       <section aria-label="Preferencias" className="flex flex-col gap-5">
-        <Segmented
-          label="Tema de color"
-          options={THEME_IDS}
-          value={prefs.theme}
-          onChange={prefs.setTheme}
-          renderLabel={(id) => THEMES[id].name}
-        />
+        {/* Selector visual de tema: isotipo Lúcida con los colores de cada opción */}
+        <div>
+          <div className="mb-3 text-[14px] font-bold text-ink-soft">Tema de color</div>
+          <div className="flex justify-center gap-4">
+            {THEME_IDS.map((id) => {
+              const t = THEMES[id]
+              const active = id === prefs.theme
+              return (
+                <button
+                  key={id}
+                  onClick={() => prefs.setTheme(id)}
+                  aria-label={`Tema ${t.name}${active ? ' (activo)' : ''}`}
+                  aria-pressed={active}
+                  className={`flex flex-col items-center gap-2 rounded-2xl p-3 transition-colors ${
+                    active
+                      ? 'bg-surface shadow-card ring-2 ring-calmo ring-offset-1'
+                      : 'bg-transparent'
+                  }`}
+                >
+                  <svg width={52} height={52} viewBox="0 0 28 28" aria-hidden>
+                    <circle
+                      cx="14"
+                      cy="14"
+                      r="13"
+                      style={{ fill: `rgb(${t.colors.calmo})` }}
+                    />
+                    <circle
+                      cx="18.5"
+                      cy="10"
+                      r="4.5"
+                      style={{ fill: `rgb(${t.colors.agilSoft})` }}
+                    />
+                  </svg>
+                  <span
+                    className={`text-[12px] font-bold ${active ? 'text-ink-strong' : 'text-ink-muted'}`}
+                  >
+                    {t.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         <Segmented
           label="Tamaño del texto"

@@ -12,7 +12,7 @@ import {
   COLOR_BG,
   COLOR_HIGHLIGHT,
   COLOR_LABEL,
-  type GameColorIndex,
+  type SequenceColorId,
 } from './sequenceEngine'
 
 export function SequenceScreen() {
@@ -141,7 +141,7 @@ export function SequenceScreen() {
             : 'flex flex-1 flex-col content-center justify-center gap-3'
         }
       >
-        {colors.map((colorIdx: GameColorIndex) => {
+        {colors.map((colorIdx: SequenceColorId) => {
           const isHighlighted = game.highlightIndex !== null
             ? game.sequence[game.highlightIndex] === colorIdx && isPlaying
             : false

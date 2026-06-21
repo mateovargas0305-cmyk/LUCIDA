@@ -109,7 +109,10 @@ export function buildAttentionRound(
 
   switch (dim) {
     case 'color': {
-      const pair = isSubtle ? pick(SUBTLE_PAIRS) : pick(OBVIOUS_PAIRS)
+      const pool = isSubtle
+        ? SUBTLE_PAIRS
+        : OBVIOUS_PAIRS.filter((p) => p.diff !== baseColor)
+      const pair = pool.length > 0 ? pick(pool) : pick(OBVIOUS_PAIRS)
       elements[correctIndex] = {
         colorClass: pair.diff,
         shape: baseShape,
@@ -139,6 +142,23 @@ export function buildAttentionRound(
         sizePct: Math.max(22, diffSize),
       }
       break
+    }
+  }
+
+  // Invariant: el elemento en correctIndex debe diferir visualmente de todos los demás.
+  if (gridSize > 1) {
+    const ref = elements[correctIndex === 0 ? 1 : 0]
+    const diff = elements[correctIndex]
+    const isDifferent =
+      diff.colorClass !== ref.colorClass ||
+      diff.shape !== ref.shape ||
+      diff.sizePct !== ref.sizePct
+    if (!isDifferent) {
+      const safe = OBVIOUS_PAIRS.find((p) => p.diff !== ref.colorClass)
+      elements[correctIndex] = {
+        ...diff,
+        colorClass: safe ? safe.diff : 'bg-calmo',
+      }
     }
   }
 

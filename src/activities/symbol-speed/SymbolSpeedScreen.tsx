@@ -221,16 +221,16 @@ function SymbolTimeAttackView({ table, totalSeconds, onFinish, onBack, bestScore
         className="rounded-2xl border border-border bg-canvas px-4 py-3"
         aria-label="Tabla de referencia de símbolos"
       >
-        <ul className="flex flex-wrap justify-center gap-2">
+        <ul className="grid grid-cols-5 gap-2">
           {table.map((entry) => (
             <li
               key={entry.symbol}
-              className="flex flex-col items-center gap-0.5 rounded-xl bg-surface px-3 py-2 shadow-soft"
+              className="flex flex-col items-center gap-0.5 rounded-xl bg-surface px-2 py-2 shadow-soft"
             >
-              <span className="text-[20px] font-bold leading-none text-ink-strong" aria-hidden>
+              <span className="text-[26px] font-bold leading-none text-ink-strong" aria-hidden>
                 {entry.symbol}
               </span>
-              <span className="text-[13px] font-bold tabular-nums text-ink-soft">
+              <span className="text-[15px] font-bold tabular-nums text-ink-soft">
                 {entry.code}
               </span>
             </li>

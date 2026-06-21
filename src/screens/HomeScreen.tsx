@@ -4,7 +4,7 @@ import {
   Hash,
   LayoutGrid,
   Eye,
-  Music2,
+  Repeat2,
   Link2,
   Type,
   Zap,
@@ -47,7 +47,7 @@ function ActivityGlyph({ id }: { id: ActivityId }) {
     case 'calc':        return <Hash {...iconProps} />
     case 'memory':      return <LayoutGrid {...iconProps} />
     case 'attention':   return <Eye {...iconProps} />
-    case 'sequence':    return <Music2 {...iconProps} />
+    case 'sequence':    return <Repeat2 {...iconProps} />
     case 'chainedCalc': return <Link2 {...iconProps} />
     case 'stroop':      return <Type {...iconProps} />
     case 'symbolSpeed': return <Zap {...iconProps} />
