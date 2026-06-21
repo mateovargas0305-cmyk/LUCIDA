@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { ModeProvider } from './modes/ModeProvider'
@@ -15,8 +16,11 @@ import { SequenceScreen } from './activities/sequence/SequenceScreen'
 import { ChainedCalcScreen } from './activities/chained-calc/ChainedCalcScreen'
 import { StroopScreen } from './activities/stroop/StroopScreen'
 import { SymbolSpeedScreen } from './activities/symbol-speed/SymbolSpeedScreen'
+import { ProgressScreen } from './screens/ProgressScreen'
 import type { ActivityId } from './modes/types'
 import { screenEnter } from './lib/motion'
+import { checkAndNotifyIfDue } from './retention/pushNotifications'
+import { useRetentionConfig } from './retention/useRetentionConfig'
 
 /**
  * Atajo SÓLO de desarrollo: `?mode=calmo&start=home` siembra el modo y la
@@ -34,6 +38,7 @@ function initialScreen(): Screen {
     const start = new URLSearchParams(location.search).get('start')
     if (start === 'home') return { name: 'home' }
     if (start === 'settings') return { name: 'settings' }
+    if (start === 'progress') return { name: 'progress' }
     if (
       start === 'quiz' || start === 'calc' || start === 'memory' ||
       start === 'attention' || start === 'sequence' || start === 'chainedCalc' ||
@@ -80,6 +85,15 @@ function AudioSync() {
   return null
 }
 
+/** Verifica al abrir la app si corresponde mostrar la notificación diaria. */
+function NotificationCheck() {
+  const { push } = useRetentionConfig()
+  useEffect(() => {
+    void checkAndNotifyIfDue(push.tone)
+  }, [push.tone])
+  return null
+}
+
 function CurrentScreen() {
   const { screen } = useNav()
   const reduce = useReducedMotion()
@@ -97,6 +111,7 @@ function CurrentScreen() {
         {screen.name === 'mode-select' && <ModeSelectScreen />}
         {screen.name === 'home' && <HomeScreen />}
         {screen.name === 'settings' && <SettingsScreen />}
+        {screen.name === 'progress' && <ProgressScreen />}
         {screen.name === 'activity' && <ActivityScreen activity={screen.activity} />}
       </motion.div>
     </AnimatePresence>
@@ -108,6 +123,7 @@ export default function App() {
     <ModeProvider>
       <NavProvider initial={initialScreen()}>
         <AudioSync />
+        <NotificationCheck />
         <AppShell>
           <CurrentScreen />
         </AppShell>

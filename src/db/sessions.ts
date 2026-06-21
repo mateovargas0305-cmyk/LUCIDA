@@ -1,8 +1,16 @@
 import { db, type SessionRecord } from './db'
 import type { ActivityId, ModeId } from '../modes/types'
 
+export interface DailyProgress {
+  day: string
+  sessions: number
+  maxScore: number
+  totalScore: number
+  activities: ActivityId[]
+}
+
 /** Día local en formato YYYY-MM-DD. */
-function localDay(date = new Date()): string {
+export function localDay(date = new Date()): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
   const d = String(date.getDate()).padStart(2, '0')
@@ -110,6 +118,85 @@ export async function getOverallStats(): Promise<OverallStats> {
   }
 }
 
+/**
+ * Para cada actividad del array, devuelve el mejor puntaje histórico
+ * del usuario en ese modo. Hace un solo recorrido de la tabla.
+ */
+export async function getBestScoreForActivities(
+  activityIds: ActivityId[],
+  mode: ModeId,
+): Promise<Record<ActivityId, number>> {
+  const all = await db.sessions
+    .where('mode')
+    .equals(mode)
+    .toArray()
+
+  return Object.fromEntries(
+    activityIds.map((id) => [
+      id,
+      all.filter((s) => s.activity === id).reduce((m, s) => Math.max(m, s.score), 0),
+    ]),
+  ) as Record<ActivityId, number>
+}
+
 export async function clearHistory(): Promise<void> {
   await db.sessions.clear()
+}
+
+/** Mayor racha histórica (en días) del usuario. */
+export async function getLongestStreak(): Promise<number> {
+  const all = await db.sessions.toArray()
+  const unique = [...new Set(all.map((s) => s.day))].sort()
+  if (unique.length === 0) return 0
+  let max = 1
+  let run = 1
+  for (let i = 1; i < unique.length; i++) {
+    const a = new Date(unique[i - 1] + 'T12:00:00')
+    const b = new Date(unique[i] + 'T12:00:00')
+    const diff = Math.round((b.getTime() - a.getTime()) / 86_400_000)
+    if (diff === 1) {
+      if (++run > max) max = run
+    } else {
+      run = 1
+    }
+  }
+  return max
+}
+
+/**
+ * Para cada uno de los últimos `n` días (de más antiguo a hoy),
+ * devuelve true si el usuario jugó ese día, false si no.
+ * El último elemento siempre corresponde a hoy.
+ */
+/**
+ * Retorna un array de `days` entradas (oldest first, última = hoy) con
+ * datos agregados por día: sesiones, puntaje máximo, puntaje total y actividades.
+ */
+export async function getProgressHistory(days: number): Promise<DailyProgress[]> {
+  const all = await db.sessions.toArray()
+  const today = new Date()
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - (days - 1 - i))
+    const dayStr = localDay(d)
+    const daySessions = all.filter((s) => s.day === dayStr)
+    return {
+      day: dayStr,
+      sessions: daySessions.length,
+      maxScore: daySessions.reduce((m, s) => Math.max(m, s.score), 0),
+      totalScore: daySessions.reduce((sum, s) => sum + s.score, 0),
+      activities: [...new Set(daySessions.map((s) => s.activity))],
+    }
+  })
+}
+
+export async function getRecentDaysPlayed(n: number): Promise<boolean[]> {
+  const all = await db.sessions.toArray()
+  const days = new Set(all.map((s) => s.day))
+  const today = new Date()
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - (n - 1 - i))
+    return days.has(localDay(d))
+  })
 }

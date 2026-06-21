@@ -34,6 +34,7 @@ export default defineConfig(({ command }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,mp3}'],
+        importScripts: ['custom-sw.js'],
       },
     }),
   ],

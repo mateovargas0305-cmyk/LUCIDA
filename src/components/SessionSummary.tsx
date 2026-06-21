@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useModeConfig } from '../modes/modeContext'
 import { playComplete } from '../lib/audioManager'
 import { PrimaryButton } from './ui/PrimaryButton'
@@ -7,6 +7,7 @@ import { ACCENT } from '../lib/accent'
 import { tpx } from '../lib/typography'
 import type { AccentToken } from '../modes/types'
 import { recordSession, type NewSession } from '../db/sessions'
+import { StreakWidget } from '../retention/StreakWidget'
 
 export interface SummaryStat {
   label: string
@@ -53,12 +54,15 @@ export function SessionSummary({
   const accent = ACCENT[config.accent]
 
   // Guardar la sesión y reproducir sonido de cierre una sola vez.
+  // `sessionSaved` se usa como refreshKey del StreakWidget para que lea el
+  // historial *después* de que la sesión quede escrita en IndexedDB.
+  const [sessionSaved, setSessionSaved] = useState(false)
   const saved = useRef(false)
   useEffect(() => {
     if (saved.current) return
     saved.current = true
-    void recordSession(record)
     playComplete()
+    void recordSession(record).then(() => setSessionSaved(true))
   }, [record])
 
   if (!config.scoring.enabled) {
@@ -124,6 +128,8 @@ export function SessionSummary({
           ))}
         </div>
       )}
+
+      {sessionSaved && <StreakWidget context="session-end" refreshKey={sessionSaved} />}
 
       <div className="mt-auto flex flex-col gap-3 pt-8">
         <PrimaryButton onClick={onAgain}>{againLabel} ›</PrimaryButton>

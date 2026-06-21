@@ -1,22 +1,14 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import {
-  BookOpen,
-  Hash,
-  LayoutGrid,
-  Eye,
-  Repeat2,
-  Link2,
-  Type,
-  Zap,
-  Settings,
-  ArrowLeftRight,
-} from 'lucide-react'
+import { Settings, ArrowLeftRight } from 'lucide-react'
 import { Logo } from '../components/Logo'
+import { ActivityGlyph } from '../components/ActivityGlyph'
 import { useMode } from '../modes/modeContext'
 import { ACTIVITY_LABELS, useNav } from '../navigation/navContext'
 import { ACCENT, RADIUS_CLASS } from '../lib/accent'
 import { tpx } from '../lib/typography'
 import type { ActivityId } from '../modes/types'
+import { StreakWidget } from '../retention/StreakWidget'
+import { DailySessionWidget } from '../retention/DailySessionWidget'
 
 const ACTIVITY_ORDER: readonly ActivityId[] = [
   'quiz',
@@ -40,19 +32,6 @@ const ACTIVITY_HINT: Record<ActivityId, string> = {
   symbolSpeed: 'Asociá cada símbolo con su código.',
 }
 
-function ActivityGlyph({ id }: { id: ActivityId }) {
-  const iconProps = { size: 26, 'aria-hidden': true } as const
-  switch (id) {
-    case 'quiz':        return <BookOpen {...iconProps} />
-    case 'calc':        return <Hash {...iconProps} />
-    case 'memory':      return <LayoutGrid {...iconProps} />
-    case 'attention':   return <Eye {...iconProps} />
-    case 'sequence':    return <Repeat2 {...iconProps} />
-    case 'chainedCalc': return <Link2 {...iconProps} />
-    case 'stroop':      return <Type {...iconProps} />
-    case 'symbolSpeed': return <Zap {...iconProps} />
-  }
-}
 
 export function HomeScreen() {
   const { config } = useMode()
@@ -103,6 +82,10 @@ export function HomeScreen() {
           Elegí una actividad para practicar.
         </p>
       </div>
+
+      <StreakWidget context="home" />
+
+      <DailySessionWidget />
 
       <ul
         className={

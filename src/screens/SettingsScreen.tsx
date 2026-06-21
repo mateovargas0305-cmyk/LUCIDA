@@ -13,6 +13,9 @@ import {
   getOverallStats,
   type OverallStats,
 } from '../db/sessions'
+import { StreakWidget } from '../retention/StreakWidget'
+import { PushSettingsWidget } from '../retention/PushSettingsWidget'
+import { useNav } from '../navigation/navContext'
 
 const THEME_IDS = Object.keys(THEMES) as ThemeId[]
 const TEXT_SCALE_IDS: TextScaleId[] = ['normal', 'grande', 'mas-grande']
@@ -90,6 +93,7 @@ function StatsBlock({ stats }: { stats: OverallStats }) {
 export function SettingsScreen() {
   const config = useModeConfig()
   const prefs = usePreferences()
+  const { navigate } = useNav()
   const [stats, setStats] = useState<OverallStats | null>(null)
 
   useEffect(() => {
@@ -113,20 +117,33 @@ export function SettingsScreen() {
       <ScreenHeader title="Ajustes" />
 
       <section aria-label="Tu progreso">
-        <h2
-          className="mb-2.5 font-serif font-semibold text-ink-strong"
-          style={{ fontSize: tpx(19) }}
-        >
-          Tu progreso
-        </h2>
-        {stats ? (
-          <StatsBlock stats={stats} />
-        ) : (
-          <p className="text-[14px] text-ink-muted">Cargando…</p>
-        )}
+        <div className="mb-2.5 flex items-baseline justify-between">
+          <h2
+            className="font-serif font-semibold text-ink-strong"
+            style={{ fontSize: tpx(19) }}
+          >
+            Tu progreso
+          </h2>
+          <button
+            onClick={() => navigate({ name: 'progress' })}
+            className="text-[13px] font-bold text-ink-soft"
+          >
+            Ver todo →
+          </button>
+        </div>
+        <div className="flex flex-col gap-3">
+          <StreakWidget context="progress" />
+          {stats ? (
+            <StatsBlock stats={stats} />
+          ) : (
+            <p className="text-[14px] text-ink-muted">Cargando…</p>
+          )}
+        </div>
       </section>
 
       <section aria-label="Preferencias" className="flex flex-col gap-5">
+        <PushSettingsWidget />
+
         {/* Selector visual de tema: isotipo Lúcida con los colores de cada opción */}
         <div>
           <div className="mb-3 text-[14px] font-bold text-ink-soft">Tema de color</div>

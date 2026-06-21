@@ -7,6 +7,7 @@ export type Screen =
   | { name: 'home' }
   | { name: 'activity'; activity: ActivityId }
   | { name: 'settings' }
+  | { name: 'progress' }
 
 export interface NavContextValue {
   screen: Screen
