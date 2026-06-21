@@ -280,115 +280,119 @@ function SymbolRoundsView({ pulsoSeconds }: RoundsViewProps) {
     session.locked && !session.timedOut && session.selected === round.correctIndex
 
   return (
-    <main
-      className="flex flex-1 flex-col px-6 pb-9 pt-8"
-      style={{ rowGap: config.controls.blockGapPx }}
-    >
-      <ScreenHeader title="Velocidad de símbolos" />
-
-      {pulsoSeconds !== undefined && (
-        <CountdownTimer
-          totalSeconds={pulsoSeconds}
-          questionKey={session.index}
-          onExpire={session.timeout}
-          paused={session.locked}
-        />
-      )}
-
-      <div>
-        <h1
-          className="font-serif font-semibold leading-snug text-ink-strong"
-          style={{ fontSize: tpx(config.typography.headingPx) }}
-        >
-          ¿Qué número le toca?
-        </h1>
-        <p
-          className="mt-2 leading-relaxed text-ink-soft"
-          style={{ fontSize: tpx(config.typography.baseTextPx) }}
-        >
-          Buscá el símbolo en la tabla de arriba.
-        </p>
-      </div>
-
+    <main className="flex flex-1 flex-col" style={{ minHeight: 0 }}>
+      {/* Contenido desplazable */}
       <div
-        className="rounded-2xl border border-border bg-canvas px-4 py-3"
-        aria-label="Tabla de referencia de símbolos"
+        className="flex flex-1 flex-col overflow-y-auto px-6 pt-8"
+        style={{ gap: config.controls.blockGapPx, paddingBottom: 8 }}
       >
-        <ul className="flex flex-wrap justify-center gap-3">
-          {table.map((entry) => (
-            <li
-              key={entry.symbol}
-              className="flex flex-col items-center gap-1 rounded-xl bg-surface px-4 py-2 shadow-soft"
-            >
-              <span
-                className="font-bold leading-none text-ink-strong"
-                style={{ fontSize: tpx(32) }}
-                aria-hidden
+        <ScreenHeader title="Velocidad de símbolos" />
+
+        {pulsoSeconds !== undefined && (
+          <CountdownTimer
+            totalSeconds={pulsoSeconds}
+            questionKey={session.index}
+            onExpire={session.timeout}
+            paused={session.locked}
+          />
+        )}
+
+        <div>
+          <h1
+            className="font-serif font-semibold leading-snug text-ink-strong"
+            style={{ fontSize: tpx(config.typography.headingPx) }}
+          >
+            ¿Qué número le toca?
+          </h1>
+          <p
+            className="mt-2 leading-relaxed text-ink-soft"
+            style={{ fontSize: tpx(config.typography.baseTextPx) }}
+          >
+            Buscá el símbolo en la tabla de arriba.
+          </p>
+        </div>
+
+        <div
+          className="rounded-2xl border border-border bg-canvas px-4 py-3"
+          aria-label="Tabla de referencia de símbolos"
+        >
+          <ul className="flex flex-wrap justify-center gap-3">
+            {table.map((entry) => (
+              <li
+                key={entry.symbol}
+                className="flex flex-col items-center gap-1 rounded-xl bg-surface px-4 py-2 shadow-soft"
               >
-                {entry.symbol}
-              </span>
-              <span className="font-bold tabular-nums text-ink-soft" style={{ fontSize: tpx(20) }}>
-                {entry.code}
-              </span>
-            </li>
-          ))}
+                <span
+                  className="font-bold leading-none text-ink-strong"
+                  style={{ fontSize: tpx(32) }}
+                  aria-hidden
+                >
+                  {entry.symbol}
+                </span>
+                <span className="font-bold tabular-nums text-ink-soft" style={{ fontSize: tpx(20) }}>
+                  {entry.code}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="flex flex-col items-center gap-3 py-4">
+          <p
+            className="font-sans font-bold text-ink-muted"
+            style={{ fontSize: tpx(config.typography.captionPx) }}
+          >
+            ¿Qué número le corresponde a…?
+          </p>
+          <span
+            className="font-bold leading-none text-ink-strong"
+            style={{ fontSize: tpx(100) }}
+            aria-label={`Símbolo: ${round.targetSymbol}`}
+          >
+            {round.targetSymbol}
+          </span>
+        </div>
+
+        <ul className="grid grid-cols-2 gap-3">
+          {round.options.map((code, i) => {
+            const status = statusOf(i)
+            return (
+              <li key={i}>
+                <motion.button
+                  onClick={() => {
+                    if (!session.locked) session.select(i, 0)
+                  }}
+                  disabled={session.locked}
+                  whileTap={reduce || session.locked ? undefined : { scale: 0.97 }}
+                  className={`flex w-full items-center justify-center gap-3 rounded-2xl border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]}`}
+                  style={{
+                    minHeight: config.controls.tapTargetMinPx + 16,
+                    fontSize: tpx(config.typography.headingPx),
+                  }}
+                >
+                  {code}
+                  {status === 'correct' && (
+                    <span
+                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-positive text-[18px] text-surface"
+                      aria-hidden
+                    >
+                      ✓
+                    </span>
+                  )}
+                  {status === 'wrongChosen' && (
+                    <span className="text-[16px] text-calmo" aria-hidden>
+                      ✕
+                    </span>
+                  )}
+                </motion.button>
+              </li>
+            )
+          })}
         </ul>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <p
-          className="font-sans font-bold text-ink-muted"
-          style={{ fontSize: tpx(config.typography.captionPx) }}
-        >
-          ¿Qué número le corresponde a…?
-        </p>
-        <span
-          className="font-bold leading-none text-ink-strong"
-          style={{ fontSize: tpx(100) }}
-          aria-label={`Símbolo: ${round.targetSymbol}`}
-        >
-          {round.targetSymbol}
-        </span>
-      </div>
-
-      <ul className="grid grid-cols-2 gap-3">
-        {round.options.map((code, i) => {
-          const status = statusOf(i)
-          return (
-            <li key={i}>
-              <motion.button
-                onClick={() => {
-                  if (!session.locked) session.select(i, 0)
-                }}
-                disabled={session.locked}
-                whileTap={reduce || session.locked ? undefined : { scale: 0.97 }}
-                className={`flex w-full items-center justify-center gap-3 rounded-2xl border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]}`}
-                style={{
-                  minHeight: config.controls.tapTargetMinPx + 16,
-                  fontSize: tpx(config.typography.headingPx),
-                }}
-              >
-                {code}
-                {status === 'correct' && (
-                  <span
-                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-positive text-[18px] text-surface"
-                    aria-hidden
-                  >
-                    ✓
-                  </span>
-                )}
-                {status === 'wrongChosen' && (
-                  <span className="text-[16px] text-calmo" aria-hidden>
-                    ✕
-                  </span>
-                )}
-              </motion.button>
-            </li>
-          )
-        })}
-      </ul>
-
-      <div className="flex flex-col gap-3 pt-1">
+      {/* Área de acción fija — siempre visible */}
+      <div className="flex flex-col gap-3 px-6 pb-9 pt-2">
         {session.locked && (
           session.timedOut ? (
             <p className="text-center text-[15px] font-bold text-calmo-strong">

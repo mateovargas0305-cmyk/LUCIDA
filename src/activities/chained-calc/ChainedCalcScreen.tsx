@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ScreenHeader } from '../../components/ui/ScreenHeader'
 import { PrimaryButton } from '../../components/ui/PrimaryButton'
@@ -26,11 +26,15 @@ const OPTION_BOX: Record<OptionStatus, string> = {
 function ChainDisplay({
   problem,
   config,
-  showIntermediateResults,
+  currentStep,
+  revealPrevious,
 }: {
   problem: ChainedCalcProblem
   config: ReturnType<typeof useModeConfig>
-  showIntermediateResults: boolean
+  /** Índice del paso que muestra '?'. */
+  currentStep: number
+  /** Si true, los pasos anteriores a currentStep muestran su resultado. */
+  revealPrevious: boolean
 }) {
   return (
     <div className="rounded-3xl border border-border bg-surface px-4 py-6 shadow-card">
@@ -48,7 +52,8 @@ function ChainDisplay({
           {problem.startValue}
         </span>
         {problem.steps.map((step, i) => {
-          const showResult = showIntermediateResults && i < problem.steps.length - 1
+          const isQuestion = i === currentStep
+          const isRevealed = revealPrevious && i < currentStep
           return (
             <div key={i} className="flex items-center gap-2">
               <span
@@ -57,14 +62,14 @@ function ChainDisplay({
               >
                 {step.expr}
               </span>
-              {i === problem.steps.length - 1 ? (
+              {isQuestion ? (
                 <span
                   className="flex h-14 min-w-[3.5rem] items-center justify-center rounded-2xl bg-agil-soft px-3 font-serif font-bold text-agil-strong"
                   style={{ fontSize: tpx(config.typography.headingPx) }}
                 >
                   ?
                 </span>
-              ) : showResult ? (
+              ) : isRevealed ? (
                 <span
                   className="flex h-14 min-w-[3.5rem] items-center justify-center rounded-2xl bg-canvas px-3 font-serif font-bold text-ink-strong"
                   style={{ fontSize: tpx(config.typography.headingPx) }}
@@ -169,7 +174,8 @@ function ChainedCalcRafagaView({ timedConfig, onHome }: { timedConfig: TimedConf
       <ChainDisplay
         problem={problem}
         config={config}
-        showIntermediateResults={cfg.showIntermediateResults}
+        currentStep={problem.steps.length - 1}
+        revealPrevious={cfg.showIntermediateResults}
       />
 
       <ul
@@ -255,6 +261,18 @@ function ChainedCalcLibrePulsoView({ timedConfig, onHome }: { timedConfig: Timed
     return () => clearTimeout(id)
   }, [timedOut, next])
 
+  // ── Estado de sub-pasos (step-by-step cuando showIntermediateResults = true) ──
+  const isStepByStep = cfg.showIntermediateResults
+  const [subStep, setSubStep] = useState(0)
+  const [subStepLocked, setSubStepLocked] = useState(false)
+  const [subStepSelectedIdx, setSubStepSelectedIdx] = useState<number | null>(null)
+
+  useEffect(() => {
+    setSubStep(0)
+    setSubStepLocked(false)
+    setSubStepSelectedIdx(null)
+  }, [sessionIndex])
+
   if (session.finished) {
     return (
       <SessionSummary
@@ -297,17 +315,33 @@ function ChainedCalcLibrePulsoView({ timedConfig, onHome }: { timedConfig: Timed
   const timerSeconds = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
   const showTimer = isPulso || (config.timing.timerAllowed && timerSeconds !== null)
 
-  const answeredCorrectly =
-    session.locked && !session.timedOut && session.selected === problem.correctIndex
+  // ── Lógica de sub-pasos ─────────────────────────────────────────────────────
+  const isFinalStep = !isStepByStep || subStep >= problem.steps.length - 1
+  const isIntermediate = isStepByStep && !isFinalStep
+  const stepData = isIntermediate ? problem.stepOptions[subStep] : null
+  const currentOptions = stepData ? stepData.options : problem.options
+  const currentCorrectIndex = stepData ? stepData.correctIndex : problem.correctIndex
 
-  const statusOf = (i: number): OptionStatus => {
-    if (!session.locked) return 'idle'
-    if (i === problem.correctIndex) return 'correct'
-    if (i === session.selected) return 'wrongChosen'
-    return 'dimmed'
-  }
+  const isLocked = isIntermediate ? subStepLocked : session.locked
+
+  const statusOf = useCallback(
+    (i: number): OptionStatus => {
+      if (!isLocked) return 'idle'
+      const selIdx = isIntermediate ? subStepSelectedIdx : session.selected
+      if (i === currentCorrectIndex) return 'correct'
+      if (i === selIdx) return 'wrongChosen'
+      return 'dimmed'
+    },
+    [isLocked, isIntermediate, subStepSelectedIdx, session.selected, currentCorrectIndex],
+  )
 
   const handleSelect = (i: number) => {
+    if (isIntermediate) {
+      if (subStepLocked) return
+      setSubStepLocked(true)
+      setSubStepSelectedIdx(i)
+      return
+    }
     const elapsed = Date.now() - questionStartRef.current
     const secs = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
     const speedBonus =
@@ -319,160 +353,191 @@ function ChainedCalcLibrePulsoView({ timedConfig, onHome }: { timedConfig: Timed
     session.select(i, speedBonus)
   }
 
+  const handleNext = () => {
+    if (isIntermediate) {
+      setSubStep((s) => s + 1)
+      setSubStepLocked(false)
+      setSubStepSelectedIdx(null)
+      return
+    }
+    session.next()
+  }
+
+  const answeredCorrectly =
+    !isIntermediate && session.locked && !session.timedOut && session.selected === problem.correctIndex
+  const subStepCorrect = isIntermediate && subStepLocked && subStepSelectedIdx === currentCorrectIndex
+
   const bonusSuffix =
     answeredCorrectly && session.lastBonus ? ` · +${session.lastBonus} bonus` : ''
 
+  const showNextBtn = isIntermediate
+    ? subStepLocked
+    : big
+      ? session.locked
+      : config.navigation.persistentNext || session.locked
+
   return (
-    <main
-      className="flex flex-1 flex-col px-6 pb-9 pt-8"
-      style={{ rowGap: config.controls.blockGapPx }}
-    >
-      <ScreenHeader
-        title="Cálculo encadenado"
-        right={
-          config.scoring.enabled ? (
-            <div className="flex items-center gap-2">
-              {session.currentStreak >= 3 && (
-                <span className="rounded-full bg-agil px-2.5 py-1 text-[12px] font-bold text-surface">
-                  Racha {session.currentStreak}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5 rounded-full bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
-                <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
-                {session.score}
-              </span>
-            </div>
-          ) : undefined
-        }
-      />
-
-      {config.scoring.showProgressBar && (
-        <div className="flex items-center gap-3" aria-hidden>
-          <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-border">
-            <div
-              className="h-full rounded-full bg-agil transition-[width] duration-300"
-              style={{ width: `${((session.index + 1) / session.total) * 100}%` }}
-            />
-          </div>
-          <span className="text-[13px] font-bold text-ink-muted">
-            {session.index + 1}/{session.total}
-          </span>
-        </div>
-      )}
-
-      {showTimer && timerSeconds !== null && (
-        <CountdownTimer
-          totalSeconds={timerSeconds}
-          questionKey={session.index}
-          onExpire={session.timeout}
-          paused={session.locked}
-        />
-      )}
-
-      <ChainDisplay
-        problem={problem}
-        config={config}
-        showIntermediateResults={cfg.showIntermediateResults}
-      />
-
-      <ul
-        className={big ? 'flex flex-col' : 'grid grid-cols-2'}
-        style={{ gap: big ? config.controls.blockGapPx - 6 : 11 }}
+    <main className="flex flex-1 flex-col" style={{ minHeight: 0 }}>
+      {/* Contenido desplazable */}
+      <div
+        className="flex flex-1 flex-col overflow-y-auto px-6 pt-8"
+        style={{ gap: config.controls.blockGapPx, paddingBottom: 8 }}
       >
-        {problem.options.map((value, i) => {
-          const status = statusOf(i)
-          return (
-            <li key={i}>
-              <motion.button
-                onClick={() => handleSelect(i)}
-                disabled={session.locked}
-                whileTap={reduce || session.locked ? undefined : { scale: 0.98 }}
-                className={`flex w-full items-center justify-center gap-3 border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]} ${
-                  big ? 'rounded-2xl' : 'rounded-xl'
-                }`}
-                style={{
-                  minHeight: big
-                    ? config.controls.tapTargetMinPx + 12
-                    : config.controls.primaryButtonMinHeightPx + 10,
-                  fontSize: big
-                    ? tpx(config.typography.headingPx)
-                    : tpx(config.typography.headingPx - 2),
-                }}
-              >
-                <span>{value}</span>
-                {status === 'correct' && (
-                  <span
-                    className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-positive text-[20px] text-surface"
-                    aria-hidden
-                  >
-                    ✓
+        <ScreenHeader
+          title="Cálculo encadenado"
+          right={
+            config.scoring.enabled ? (
+              <div className="flex items-center gap-2">
+                {session.currentStreak >= 3 && (
+                  <span className="rounded-full bg-agil px-2.5 py-1 text-[12px] font-bold text-surface">
+                    Racha {session.currentStreak}
                   </span>
                 )}
-                {status === 'wrongChosen' && config.feedback.showErrorMark && (
-                  <span className="flex-none text-[18px] text-calmo" aria-hidden>
-                    ✕
-                  </span>
-                )}
-              </motion.button>
-            </li>
-          )
-        })}
-      </ul>
+                <span className="flex items-center gap-1.5 rounded-full bg-agil-soft px-3 py-1.5 text-[14px] font-bold text-agil-strong">
+                  <span className="h-2 w-2 rotate-45 rounded-[2px] bg-agil" aria-hidden />
+                  {session.score}
+                </span>
+              </div>
+            ) : undefined
+          }
+        />
 
-      <div className="mt-auto flex flex-col gap-3 pt-2">
-        {session.retryHint && !session.locked && (
-          <FeedbackBanner
-            variant="gentle"
-            message={config.feedback.errorMessage}
-            fontSize={config.typography.baseTextPx - 2}
+        {config.scoring.showProgressBar && (
+          <div className="flex items-center gap-3" aria-hidden>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full bg-agil transition-[width] duration-300"
+                style={{ width: `${((session.index + 1) / session.total) * 100}%` }}
+              />
+            </div>
+            <span className="text-[13px] font-bold text-ink-muted">
+              {session.index + 1}/{session.total}
+            </span>
+          </div>
+        )}
+
+        {showTimer && timerSeconds !== null && (
+          <CountdownTimer
+            totalSeconds={timerSeconds}
+            questionKey={session.index}
+            onExpire={session.timeout}
+            paused={isLocked}
           />
         )}
 
-        {session.locked &&
-          (session.timedOut ? (
-            <p className="text-center text-[15px] font-bold text-calmo-strong">
-              Tiempo agotado. La respuesta era{' '}
-              <span className="text-positive">{problem.answer}</span>.
-            </p>
-          ) : big ? (
-            <FeedbackBanner
-              variant={answeredCorrectly ? 'success' : 'gentle'}
-              message={
-                answeredCorrectly
-                  ? config.feedback.successMessage
-                  : config.feedback.errorMessage
-              }
-              fontSize={config.typography.controlTextPx - 2}
-              withCheck={answeredCorrectly}
-            />
-          ) : (
-            <p
-              className={`text-center text-[15px] font-bold ${
-                answeredCorrectly ? 'text-positive' : 'text-calmo-strong'
-              }`}
-            >
-              {answeredCorrectly
-                ? `${config.feedback.successMessage}${
-                    config.scoring.enabled
-                      ? ` +${config.scoring.pointsPerCorrect} pts${bonusSuffix}`
-                      : ''
-                  }`
-                : `Era ${problem.answer}. ${config.feedback.errorMessage}`}
-            </p>
-          ))}
+        <ChainDisplay
+          problem={problem}
+          config={config}
+          currentStep={isStepByStep ? subStep : problem.steps.length - 1}
+          revealPrevious={isStepByStep}
+        />
 
-        {!session.timedOut &&
-          (() => {
-            const showNext = big
-              ? session.locked
-              : config.navigation.persistentNext || session.locked
-            if (!showNext) return null
+        <ul
+          className={big ? 'flex flex-col' : 'grid grid-cols-2'}
+          style={{ gap: big ? config.controls.blockGapPx - 6 : 11 }}
+        >
+          {currentOptions.map((value, i) => {
+            const status = statusOf(i)
             return (
-              <PrimaryButton onClick={session.next} disabled={!session.locked}>
-                {isLast ? 'Ver resultado' : 'Siguiente'} ›
-              </PrimaryButton>
+              <li key={i}>
+                <motion.button
+                  onClick={() => handleSelect(i)}
+                  disabled={isLocked}
+                  whileTap={reduce || isLocked ? undefined : { scale: 0.98 }}
+                  className={`flex w-full items-center justify-center gap-3 border-2 font-serif font-bold transition-colors ${OPTION_BOX[status]} ${
+                    big ? 'rounded-2xl' : 'rounded-xl'
+                  }`}
+                  style={{
+                    minHeight: big
+                      ? config.controls.tapTargetMinPx + 12
+                      : config.controls.primaryButtonMinHeightPx + 10,
+                    fontSize: big
+                      ? tpx(config.typography.headingPx)
+                      : tpx(config.typography.headingPx - 2),
+                  }}
+                >
+                  <span>{value}</span>
+                  {status === 'correct' && (
+                    <span
+                      className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-positive text-[20px] text-surface"
+                      aria-hidden
+                    >
+                      ✓
+                    </span>
+                  )}
+                  {status === 'wrongChosen' && config.feedback.showErrorMark && (
+                    <span className="flex-none text-[18px] text-calmo" aria-hidden>
+                      ✕
+                    </span>
+                  )}
+                </motion.button>
+              </li>
             )
-          })()}
+          })}
+        </ul>
+      </div>
+
+      {/* Área de acción fija — siempre visible */}
+      <div className="flex flex-col gap-3 px-6 pb-9 pt-2">
+        {isIntermediate && subStepLocked && (
+          <FeedbackBanner
+            variant={subStepCorrect ? 'success' : 'gentle'}
+            message={subStepCorrect ? config.feedback.successMessage : config.feedback.errorMessage}
+            fontSize={config.typography.controlTextPx - 2}
+            withCheck={subStepCorrect}
+          />
+        )}
+
+        {!isIntermediate && (
+          <>
+            {session.retryHint && !session.locked && (
+              <FeedbackBanner
+                variant="gentle"
+                message={config.feedback.errorMessage}
+                fontSize={config.typography.baseTextPx - 2}
+              />
+            )}
+
+            {session.locked &&
+              (session.timedOut ? (
+                <p className="text-center text-[15px] font-bold text-calmo-strong">
+                  Tiempo agotado. La respuesta era{' '}
+                  <span className="text-positive">{problem.answer}</span>.
+                </p>
+              ) : big ? (
+                <FeedbackBanner
+                  variant={answeredCorrectly ? 'success' : 'gentle'}
+                  message={
+                    answeredCorrectly
+                      ? config.feedback.successMessage
+                      : config.feedback.errorMessage
+                  }
+                  fontSize={config.typography.controlTextPx - 2}
+                  withCheck={answeredCorrectly}
+                />
+              ) : (
+                <p
+                  className={`text-center text-[15px] font-bold ${
+                    answeredCorrectly ? 'text-positive' : 'text-calmo-strong'
+                  }`}
+                >
+                  {answeredCorrectly
+                    ? `${config.feedback.successMessage}${
+                        config.scoring.enabled
+                          ? ` +${config.scoring.pointsPerCorrect} pts${bonusSuffix}`
+                          : ''
+                      }`
+                    : `Era ${problem.answer}. ${config.feedback.errorMessage}`}
+                </p>
+              ))}
+          </>
+        )}
+
+        {!session.timedOut && showNextBtn && (
+          <PrimaryButton onClick={handleNext} disabled={!isLocked}>
+            {!isIntermediate && isLast ? 'Ver resultado' : 'Siguiente'} ›
+          </PrimaryButton>
+        )}
       </div>
     </main>
   )

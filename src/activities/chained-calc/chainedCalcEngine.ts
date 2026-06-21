@@ -17,6 +17,8 @@ export interface ChainedCalcProblem {
   answer: number
   options: number[]
   correctIndex: number
+  /** Opciones por cada sub-paso (incluyendo el final). stepOptions[i] cubre steps[i]. */
+  stepOptions: { options: number[]; correctIndex: number }[]
 }
 
 const randInt = (min: number, max: number): number =>
@@ -115,12 +117,18 @@ export function buildChainedCalcProblem(
   const answer = value
   const options = buildOptions(answer, 4)
 
+  const stepOptions = steps.map((step) => {
+    const opts = buildOptions(step.result, 4)
+    return { options: opts, correctIndex: opts.indexOf(step.result) }
+  })
+
   return {
     startValue,
     steps,
     answer,
     options,
     correctIndex: options.indexOf(answer),
+    stepOptions,
   }
 }
 
