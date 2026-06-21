@@ -49,6 +49,7 @@ const tierra: Theme = {
     positiveSoft: '220 229 208', // #DCE5D0
     positiveInk: '61 82 56', // #3D5238
     gentle: '216 199 168', // #D8C7A8
+    gentleStrong: '170 148 110', // #AA946E
     gentleSoft: '243 234 217', // #F3EAD9
     gentleInk: '110 94 76', // #6E5E4C
   },

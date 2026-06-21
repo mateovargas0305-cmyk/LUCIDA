@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import type { SequenceActivityConfig } from '../../modes/types'
 import { buildSequence, type SequenceColorId } from './sequenceEngine'
-import { playTap, playCorrect, playError } from '../../lib/audioManager'
+import { playSequenceTap, playCorrect, playError } from '../../lib/audioManager'
 
 export type SequencePhase =
   | 'intro'    // esperando que el usuario empiece
@@ -124,7 +124,7 @@ export function useSequenceGame(
         return
       }
       dispatch({ type: 'set_highlight', index: i })
-      playTap()
+      playSequenceTap(state.sequence[i])
       setTimeout(() => {
         if (cancelled) return
         dispatch({ type: 'set_highlight', index: null })
@@ -173,7 +173,7 @@ export function useSequenceGame(
       }
       const isLast = state.userInput.length + 1 === state.sequence.length
       if (isLast) playCorrect()
-      else playTap()
+      else playSequenceTap(color)
       dispatch({ type: 'tap', color, pointsPerCorrect })
     },
     [state.phase, state.sequence, state.userInput, cfg.retryOnError, pointsPerCorrect],

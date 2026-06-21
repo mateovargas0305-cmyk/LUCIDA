@@ -45,6 +45,7 @@ export interface ThemeColors {
   positiveSoft: string
   positiveInk: string
   gentle: string
+  gentleStrong: string
   gentleSoft: string
   gentleInk: string
 }
@@ -76,6 +77,7 @@ export const CSS_VAR_BY_TOKEN: Record<keyof ThemeColors, string> = {
   positiveSoft: '--c-positive-soft',
   positiveInk: '--c-positive-ink',
   gentle: '--c-gentle',
+  gentleStrong: '--c-gentle-strong',
   gentleSoft: '--c-gentle-soft',
   gentleInk: '--c-gentle-ink',
 }

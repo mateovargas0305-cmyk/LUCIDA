@@ -13,14 +13,14 @@ interface AppShellProps {
 export function AppShell({ children, grain = true }: AppShellProps) {
   return (
     <div className="min-h-full w-full bg-canvas">
-      <div className="relative mx-auto flex min-h-full w-full max-w-[480px] flex-col">
+      <div className="relative mx-auto flex min-h-full w-full max-w-[480px] flex-col sm:max-w-[600px] md:max-w-[680px]">
         {grain && (
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-grain opacity-60"
           />
         )}
-        <div className="relative z-10 flex min-h-full flex-1 flex-col">
+        <div className="relative z-10 flex min-h-full flex-1 flex-col overflow-y-auto">
           {children}
         </div>
       </div>

@@ -22,7 +22,7 @@ export interface Preferences {
   soundEnabled: boolean
   /** Efectos de sonido sintetizados (acierto, error, selección, cierre). */
   soundFxEnabled: boolean
-  /** Música de fondo en loop. Off por defecto; el usuario la activa si quiere. */
+  /** Música de fondo en loop. Activada por defecto; el usuario puede desactivarla. */
   musicEnabled: boolean
   textScale: TextScaleId
 }
@@ -39,7 +39,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'tierra',
   soundEnabled: true,
   soundFxEnabled: true,
-  musicEnabled: false,   // música off por defecto
+  musicEnabled: true,    // música activada por defecto
   textScale: 'normal',
 }
 

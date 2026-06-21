@@ -157,6 +157,21 @@ export function playTap(): void {
   } catch { /* noop */ }
 }
 
+// Notas por color de Secuencias: C major add6 (C–E–G–A)
+const SEQUENCE_NOTES: Record<string, string> = {
+  agil: 'A4',   // ámbar — el más brillante
+  sereno: 'E4', // verde — melodioso
+  calmo: 'C4',  // terracota — cálido, grave
+  gentle: 'G4', // arena — neutro
+}
+
+export function playSequenceTap(colorId: string): void {
+  if (!_initialized || !_fxEnabled || !_tapSynth) return
+  try {
+    _tapSynth.triggerAttackRelease(SEQUENCE_NOTES[colorId] ?? 'A4', '16n')
+  } catch { /* noop */ }
+}
+
 export function playCorrect(): void {
   if (!_initialized || !_fxEnabled || !_correctPoly) return
   try {

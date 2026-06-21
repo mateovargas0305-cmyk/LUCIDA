@@ -59,6 +59,7 @@ export default {
         },
         gentle: {
           DEFAULT: withVar('--c-gentle'),
+          strong: withVar('--c-gentle-strong'),
           soft: withVar('--c-gentle-soft'),
           ink: withVar('--c-gentle-ink'),
         },
