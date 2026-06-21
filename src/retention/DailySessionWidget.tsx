@@ -17,8 +17,6 @@ function ChallengeView({
   activities,
   softBg,
   strongText,
-  solidBg,
-  onSolid,
   radius,
   mode,
   reduce,
@@ -26,8 +24,6 @@ function ChallengeView({
   activities: ActivityId[]
   softBg: string
   strongText: string
-  solidBg: string
-  onSolid: string
   radius: string
   mode: string
   reduce: boolean | null
@@ -226,8 +222,6 @@ export function DailySessionWidget() {
         activities={activities}
         softBg={accent.softBg}
         strongText={accent.strongText}
-        solidBg={accent.solidBg}
-        onSolid={accent.onSolid}
         radius={radius}
         mode={config.id}
         reduce={reduce}
