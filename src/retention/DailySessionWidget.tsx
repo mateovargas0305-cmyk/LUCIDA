@@ -15,14 +15,12 @@ import type { ActivityId } from '../modes/types'
 
 function ChallengeView({
   activities,
-  softBg,
   strongText,
   radius,
   mode,
   reduce,
 }: {
   activities: ActivityId[]
-  softBg: string
   strongText: string
   radius: string
   mode: string
@@ -220,7 +218,6 @@ export function DailySessionWidget() {
     return (
       <ChallengeView
         activities={activities}
-        softBg={accent.softBg}
         strongText={accent.strongText}
         radius={radius}
         mode={config.id}
