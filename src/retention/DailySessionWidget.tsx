@@ -45,11 +45,11 @@ function ChallengeView({
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className={`${softBg} ${radius} p-4`}
+      className={`${radius} border border-border p-3`}
     >
-      <div className="mb-3 flex items-center gap-2">
-        <Flame size={15} className={strongText} aria-hidden />
-        <span className={`text-[12px] font-bold uppercase tracking-wider ${strongText}`}>
+      <div className="mb-2 flex items-center gap-1.5">
+        <Flame size={13} className={strongText} aria-hidden />
+        <span className={`text-[11px] font-bold uppercase tracking-wider ${strongText}`}>
           Desafío del día
         </span>
       </div>
@@ -59,11 +59,11 @@ function ChallengeView({
           <button
             key={id}
             onClick={() => navigate({ name: 'activity', activity: id })}
-            className={`flex flex-1 flex-col items-center gap-2 rounded-2xl border border-border bg-surface px-2 py-3 shadow-soft`}
+            className={`flex flex-1 flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-2 shadow-soft`}
             aria-label={`Empezar ${ACTIVITY_LABELS[id]}`}
           >
             <span className={strongText}>
-              <ActivityGlyph id={id} size={20} />
+              <ActivityGlyph id={id} size={18} />
             </span>
             <span className="text-center text-[11px] font-semibold leading-tight text-ink-soft">
               {ACTIVITY_LABELS[id]}
@@ -73,8 +73,8 @@ function ChallengeView({
       </div>
 
       {combinedBest > 0 && (
-        <p className={`mt-3 text-[12px] font-bold ${strongText}`}>
-          Tu récord combinado: {combinedBest.toLocaleString('es')} pts
+        <p className={`mt-2 text-[11px] font-bold ${strongText}`}>
+          Récord combinado: {combinedBest.toLocaleString('es')} pts
         </p>
       )}
     </motion.div>
@@ -105,9 +105,9 @@ function RoutineView({
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className={`${softBg} ${radius} p-4`}
+      className={`${softBg} ${radius} p-3.5`}
     >
-      <p className={`mb-3 text-[13px] font-bold ${strongText}`}>
+      <p className={`mb-2 text-[12px] font-bold ${strongText}`}>
         Tu sesión sugerida
       </p>
 
