@@ -29,6 +29,35 @@ function prepareQuestion(q: QuizQuestion, optionsToShow: number): PreparedQuesti
   }
 }
 
+// ── Tracking cross-sesión de preguntas ya vistas ─────────────────────────────
+
+const SEEN_KEY = 'lucida.quiz.seen'
+
+function getSeenIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY)
+    return raw ? new Set<string>(JSON.parse(raw) as string[]) : new Set<string>()
+  } catch {
+    return new Set<string>()
+  }
+}
+
+function markAsSeen(ids: string[]): void {
+  try {
+    const seen = getSeenIds()
+    ids.forEach((id) => seen.add(id))
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...seen]))
+  } catch {}
+}
+
+function resetSeen(): void {
+  try {
+    localStorage.removeItem(SEEN_KEY)
+  } catch {}
+}
+
+// ── Weighted sampling ─────────────────────────────────────────────────────────
+
 /**
  * Sampling ponderado sin reemplazo. Preguntas con peso 0 se excluyen;
  * preguntas con peso mayor tienen más chances de ser elegidas.
@@ -66,23 +95,56 @@ function weightedSample(
   return result
 }
 
+// ── Pool elegible (respeta levels y levelWeights) ────────────────────────────
+
+function eligiblePool(cfg: QuizActivityConfig, bank: readonly QuizQuestion[]): QuizQuestion[] {
+  const byLevel = bank.filter((q) => cfg.levels.includes(q.level))
+  const pool = byLevel.length > 0 ? byLevel : bank
+  // Excluir niveles con peso 0 explícito
+  const hasWeights = Object.keys(cfg.levelWeights).length > 0
+  if (!hasWeights) return pool
+  return pool.filter((q) => (cfg.levelWeights[q.level] ?? 1) > 0)
+}
+
+// ── Exports ───────────────────────────────────────────────────────────────────
+
 /**
- * Arma una sesión de quiz según la config del modo: filtra por niveles
- * permitidos, aplica pesos si los hay, elige N preguntas y prepara cada una.
+ * Arma una sesión de quiz según la config del modo. Prioriza preguntas no
+ * vistas antes; cuando el ciclo se agota reinicia el registro.
  */
 export function buildQuizSession(
   cfg: QuizActivityConfig,
   bank: readonly QuizQuestion[] = QUIZ_BANK,
 ): PreparedQuestion[] {
-  const eligible = bank.filter((q) => cfg.levels.includes(q.level))
-  const pool = eligible.length > 0 ? eligible : bank
+  const full = eligiblePool(cfg, bank)
+
+  // Priorizar preguntas no vistas
+  const seen = getSeenIds()
+  const unseen = full.filter((q) => !seen.has(q.id))
+  const pool = unseen.length >= cfg.questionsPerSession
+    ? unseen
+    : (() => { resetSeen(); return full })()
 
   const hasWeights = Object.keys(cfg.levelWeights).length > 0
   const questions = hasWeights
     ? weightedSample(pool, cfg.levelWeights, cfg.questionsPerSession)
     : sampleN(pool, cfg.questionsPerSession)
 
+  markAsSeen(questions.map((q) => q.id))
+
   return questions.map((q) => prepareQuestion(q, cfg.optionsToShow))
+}
+
+/**
+ * Pool grande para modo ráfaga: todas las preguntas elegibles barajadas,
+ * sin límite de questionsPerSession. Evita que el pool se agote en sesiones largas.
+ */
+export function buildQuizPool(
+  cfg: QuizActivityConfig,
+  bank: readonly QuizQuestion[] = QUIZ_BANK,
+): PreparedQuestion[] {
+  const pool = eligiblePool(cfg, bank)
+  return sampleN(pool, pool.length).map((q) => prepareQuestion(q, cfg.optionsToShow))
 }
 
 export const OPTION_LETTERS = ['A', 'B', 'C', 'D'] as const

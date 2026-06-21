@@ -12,7 +12,7 @@ import { CATEGORY_LABEL } from '../../data/quiz'
 import { canSpeak, speak } from '../../lib/speech'
 import { tpx } from '../../lib/typography'
 import { useQuizSession } from './useQuizSession'
-import { buildQuizSession, OPTION_LETTERS, type PreparedQuestion } from './quizEngine'
+import { buildQuizPool, buildQuizSession, OPTION_LETTERS, type PreparedQuestion } from './quizEngine'
 import { GameTimePicker } from '../shared/GameTimePicker'
 import { useRafagaSession } from '../shared/useRafagaSession'
 import type { TimedConfig } from '../shared/timedConfig'
@@ -41,7 +41,7 @@ function QuizRafagaView({ timedConfig, onHome }: { timedConfig: TimedConfig; onH
   const quizCfg = config.activities.quiz
 
   const session = useRafagaSession<PreparedQuestion>({
-    buildPool: () => buildQuizSession(quizCfg),
+    buildPool: () => buildQuizPool(quizCfg),
     totalSeconds: timedConfig.seconds,
     lockMs: 600,
     pointsPerCorrect: config.scoring.enabled ? config.scoring.pointsPerCorrect : 1,
@@ -253,7 +253,9 @@ function QuizLibrePulsoView({ timedConfig, onHome }: { timedConfig: TimedConfig;
 
   const isPulso = timedConfig.mode === 'pulso'
   const timerSeconds = isPulso ? timedConfig.seconds : config.timing.secondsPerQuestion
-  const showTimer = isPulso || (config.timing.timerAllowed && timerSeconds !== null)
+  const showTimer =
+    timedConfig.mode !== 'libre' &&
+    (isPulso || (config.timing.timerAllowed && timerSeconds !== null))
 
   const statusOf = (i: number): OptionStatus => {
     if (!session.locked) return 'idle'
