@@ -97,7 +97,7 @@ function weightedSample(
 
 // ── Pool elegible (respeta levels y levelWeights) ────────────────────────────
 
-function eligiblePool(cfg: QuizActivityConfig, bank: readonly QuizQuestion[]): QuizQuestion[] {
+function eligiblePool(cfg: QuizActivityConfig, bank: readonly QuizQuestion[]): readonly QuizQuestion[] {
   const byLevel = bank.filter((q) => cfg.levels.includes(q.level))
   const pool = byLevel.length > 0 ? byLevel : bank
   // Excluir niveles con peso 0 explícito
