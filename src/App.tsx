@@ -42,14 +42,7 @@ function initialScreen(): Screen {
       return { name: 'activity', activity: start }
     }
   }
-  const hasMode = (() => {
-    try {
-      return localStorage.getItem('lucida.mode') !== null
-    } catch {
-      return false
-    }
-  })()
-  return hasMode ? { name: 'home' } : { name: 'mode-select' }
+  return { name: 'mode-select' }
 }
 
 /** Clave estable por pantalla para que AnimatePresence anime las transiciones. */
