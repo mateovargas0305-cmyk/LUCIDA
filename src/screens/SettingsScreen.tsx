@@ -188,13 +188,35 @@ export function SettingsScreen() {
           </div>
         </div>
 
-        <Segmented
-          label="Tamaño del texto"
-          options={TEXT_SCALE_IDS}
-          value={prefs.textScale}
-          onChange={prefs.setTextScale}
-          renderLabel={(id) => TEXT_SCALE_LABEL[id]}
-        />
+        <div>
+          <div className="mb-2 text-[14px] font-bold text-ink-soft">Tamaño del texto</div>
+          <div
+            role="radiogroup"
+            aria-label="Tamaño del texto"
+            className="flex items-center gap-2 rounded-2xl bg-surface p-1.5"
+          >
+            {TEXT_SCALE_IDS.map((id) => {
+              const active = id === prefs.textScale
+              const px = ({ normal: 13, grande: 16, 'mas-grande': 19 } as const)[id]
+              return (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => prefs.setTextScale(id)}
+                  style={{ fontSize: px }}
+                  className={`flex-1 rounded-xl px-2 py-2.5 font-bold transition-colors ${
+                    active
+                      ? 'bg-calmo text-calmo-ink shadow-card'
+                      : 'bg-transparent text-ink-soft'
+                  }`}
+                >
+                  {TEXT_SCALE_LABEL[id]}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         {/* Tres toggles de audio separados */}
         {(
