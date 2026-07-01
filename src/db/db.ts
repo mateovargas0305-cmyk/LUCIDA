@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { ActivityId, ModeId } from '../modes/types'
+import type { ActivityId, ActivitySource, ModeId } from '../modes/types'
 
 /** Una sesión completada de cualquier actividad. */
 export interface SessionRecord {
@@ -15,6 +15,8 @@ export interface SessionRecord {
   day: string
   /** Duración en ms (para memoria: tiempo total; otros: null). */
   durationMs: number | null
+  /** Origen del lanzamiento (p. ej. 'daily'); ausente si se abrió desde la lista. */
+  source?: ActivitySource
 }
 
 /**

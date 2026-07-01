@@ -7,6 +7,7 @@ import { ACCENT } from '../lib/accent'
 import { tpx } from '../lib/typography'
 import type { AccentToken } from '../modes/types'
 import { recordSession, type NewSession } from '../db/sessions'
+import { useNav } from '../navigation/navContext'
 import { StreakWidget } from '../retention/StreakWidget'
 
 export interface SummaryStat {
@@ -52,6 +53,9 @@ export function SessionSummary({
   const config = useModeConfig()
   const reduce = useReducedMotion()
   const accent = ACCENT[config.accent]
+  const { screen } = useNav()
+  // Origen del lanzamiento: la ruta 'activity' sigue activa al mostrar el cierre.
+  const source = screen.name === 'activity' ? screen.source : undefined
 
   // Guardar la sesión y reproducir sonido de cierre una sola vez.
   // `sessionSaved` se usa como refreshKey del StreakWidget para que lea el
@@ -62,8 +66,8 @@ export function SessionSummary({
     if (saved.current) return
     saved.current = true
     playComplete()
-    void recordSession(record).then(() => setSessionSaved(true))
-  }, [record])
+    void recordSession({ ...record, source }).then(() => setSessionSaved(true))
+  }, [record, source])
 
   if (!config.scoring.enabled) {
     // Calmo: nada de puntaje, nada de "errores". Sólo gratitud y calma.

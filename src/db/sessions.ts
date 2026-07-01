@@ -1,5 +1,5 @@
 import { db, type SessionRecord } from './db'
-import type { ActivityId, ModeId } from '../modes/types'
+import type { ActivityId, ActivitySource, ModeId } from '../modes/types'
 
 export interface DailyProgress {
   day: string
@@ -24,6 +24,8 @@ export interface NewSession {
   total: number
   score: number
   durationMs?: number
+  /** Origen del lanzamiento; 'daily' si vino del widget de sesión diaria. */
+  source?: ActivitySource
 }
 
 /** Guarda una sesión terminada. */
@@ -143,11 +145,21 @@ export async function clearHistory(): Promise<void> {
   await db.sessions.clear()
 }
 
-/** Actividades con al menos una sesión terminada hoy. */
-export async function getActivitiesDoneToday(): Promise<Set<ActivityId>> {
+/**
+ * Actividades con al menos una sesión terminada hoy.
+ * Si se pasa `source`, sólo cuenta las sesiones lanzadas desde ese origen
+ * (p. ej. 'daily' = completadas desde el widget de sesión diaria).
+ */
+export async function getActivitiesDoneToday(
+  source?: ActivitySource,
+): Promise<Set<ActivityId>> {
   const today = localDay()
   const sessions = await db.sessions.where('day').equals(today).toArray()
-  return new Set(sessions.map((s) => s.activity))
+  return new Set(
+    sessions
+      .filter((s) => source === undefined || s.source === source)
+      .map((s) => s.activity),
+  )
 }
 
 /** Mayor racha histórica (en días) del usuario. */

@@ -261,6 +261,9 @@ export interface ModeActivities {
 /** Identificador de actividad (para iterar el inicio y rutas). */
 export type ActivityId = keyof ModeActivities
 
+/** De dónde se lanzó una actividad. 'daily' = desde el widget de sesión diaria. */
+export type ActivitySource = 'daily'
+
 /** Comportamiento de audio para el modo. */
 export interface ModeAudioConfig {
   /** Volumen de la música de fondo en dB (más negativo = más suave). */

@@ -73,7 +73,7 @@ function ChallengeView({
           return (
             <button
               key={id}
-              onClick={() => navigate({ name: 'activity', activity: id })}
+              onClick={() => navigate({ name: 'activity', activity: id, source: 'daily' })}
               className={`relative flex flex-1 flex-col items-center gap-1.5 rounded-2xl border px-2 py-2 shadow-soft transition-colors ${
                 isDone ? 'border-positive bg-positive-soft' : 'border-border bg-surface'
               }`}
@@ -142,7 +142,7 @@ function RoutineView({
           return (
             <button
               key={id}
-              onClick={() => navigate({ name: 'activity', activity: id })}
+              onClick={() => navigate({ name: 'activity', activity: id, source: 'daily' })}
               className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-soft transition-colors ${
                 isDone ? 'border-positive bg-positive-soft' : 'border-border bg-surface'
               }`}
@@ -239,7 +239,7 @@ function InvitationView({
       </div>
 
       <button
-        onClick={() => navigate({ name: 'activity', activity })}
+        onClick={() => navigate({ name: 'activity', activity, source: 'daily' })}
         className={`flex w-full items-center justify-center ${radius} ${solidBg} ${onSolid} font-bold shadow-card`}
         style={{ minHeight: primaryButtonMinHeightPx, fontSize: tpx(controlTextPx - 2) }}
       >
@@ -264,7 +264,7 @@ export function DailySessionWidget() {
   const [done, setDone] = useState<Set<ActivityId>>(() => new Set())
   useEffect(() => {
     let alive = true
-    void getActivitiesDoneToday().then((d) => {
+    void getActivitiesDoneToday('daily').then((d) => {
       if (alive) setDone(d)
     })
     return () => {

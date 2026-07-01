@@ -1,11 +1,11 @@
 import { createContext, useContext } from 'react'
-import type { ActivityId } from '../modes/types'
+import type { ActivityId, ActivitySource } from '../modes/types'
 
 /** Pantallas de la app. Se amplía a medida que se suman flujos. */
 export type Screen =
   | { name: 'mode-select' }
   | { name: 'home' }
-  | { name: 'activity'; activity: ActivityId }
+  | { name: 'activity'; activity: ActivityId; source?: ActivitySource }
   | { name: 'settings' }
   | { name: 'progress' }
 
