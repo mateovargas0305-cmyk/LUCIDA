@@ -1,26 +1,41 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { Flame } from 'lucide-react'
+import { Flame, Check } from 'lucide-react'
 import { useMode } from '../modes/modeContext'
 import { ACCENT, RADIUS_CLASS } from '../lib/accent'
 import { tpx } from '../lib/typography'
 import { useRetentionConfig } from './useRetentionConfig'
 import { getDailyActivities } from './dailySession'
-import { getBestScoreForActivities } from '../db/sessions'
+import { getBestScoreForActivities, getActivitiesDoneToday } from '../db/sessions'
 import { ACTIVITY_LABELS, useNav } from '../navigation/navContext'
 import { ActivityGlyph } from '../components/ActivityGlyph'
 import type { ActivityId } from '../modes/types'
+
+/** Insignia de check verde para actividades ya hechas hoy. */
+function DoneBadge({ size = 16 }: { size?: number }) {
+  return (
+    <span
+      className="flex flex-none items-center justify-center rounded-full bg-positive text-surface"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <Check size={Math.round(size * 0.66)} strokeWidth={3.5} />
+    </span>
+  )
+}
 
 // ── Variante challenge (Ágil) ─────────────────────────────────────────────────
 
 function ChallengeView({
   activities,
+  done,
   strongText,
   radius,
   mode,
   reduce,
 }: {
   activities: ActivityId[]
+  done: Set<ActivityId>
   strongText: string
   radius: string
   mode: string
@@ -53,21 +68,31 @@ function ChallengeView({
       </div>
 
       <div className="flex gap-2">
-        {activities.map((id) => (
-          <button
-            key={id}
-            onClick={() => navigate({ name: 'activity', activity: id })}
-            className={`flex flex-1 flex-col items-center gap-1.5 rounded-2xl border border-border bg-surface px-2 py-2 shadow-soft`}
-            aria-label={`Empezar ${ACTIVITY_LABELS[id]}`}
-          >
-            <span className={strongText}>
-              <ActivityGlyph id={id} size={18} />
-            </span>
-            <span className="text-center text-[11px] font-semibold leading-tight text-ink-soft">
-              {ACTIVITY_LABELS[id]}
-            </span>
-          </button>
-        ))}
+        {activities.map((id) => {
+          const isDone = done.has(id)
+          return (
+            <button
+              key={id}
+              onClick={() => navigate({ name: 'activity', activity: id })}
+              className={`relative flex flex-1 flex-col items-center gap-1.5 rounded-2xl border px-2 py-2 shadow-soft transition-colors ${
+                isDone ? 'border-positive bg-positive-soft' : 'border-border bg-surface'
+              }`}
+              aria-label={`${ACTIVITY_LABELS[id]}${isDone ? ' (hecho hoy)' : ''}`}
+            >
+              {isDone && (
+                <span className="absolute right-1 top-1">
+                  <DoneBadge size={15} />
+                </span>
+              )}
+              <span className={isDone ? 'text-positive' : strongText}>
+                <ActivityGlyph id={id} size={18} />
+              </span>
+              <span className="text-center text-[11px] font-semibold leading-tight text-ink-soft">
+                {ACTIVITY_LABELS[id]}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {combinedBest > 0 && (
@@ -83,6 +108,7 @@ function ChallengeView({
 
 function RoutineView({
   activities,
+  done,
   softBg,
   strongText,
   radius,
@@ -90,6 +116,7 @@ function RoutineView({
   reduce,
 }: {
   activities: ActivityId[]
+  done: Set<ActivityId>
   softBg: string
   strongText: string
   radius: string
@@ -110,27 +137,38 @@ function RoutineView({
       </p>
 
       <div className="flex flex-col gap-2">
-        {activities.map((id) => (
-          <button
-            key={id}
-            onClick={() => navigate({ name: 'activity', activity: id })}
-            className={`flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-left shadow-soft`}
-            aria-label={`Empezar ${ACTIVITY_LABELS[id]}`}
-          >
-            <span className={strongText}>
-              <ActivityGlyph id={id} size={18} />
-            </span>
-            <span
-              className="font-semibold text-ink-strong"
-              style={{ fontSize: tpx(baseTextPx) }}
+        {activities.map((id) => {
+          const isDone = done.has(id)
+          return (
+            <button
+              key={id}
+              onClick={() => navigate({ name: 'activity', activity: id })}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-soft transition-colors ${
+                isDone ? 'border-positive bg-positive-soft' : 'border-border bg-surface'
+              }`}
+              aria-label={`${ACTIVITY_LABELS[id]}${isDone ? ' (hecho hoy)' : ''}`}
             >
-              {ACTIVITY_LABELS[id]}
-            </span>
-            <span className="ml-auto text-[20px] leading-none text-ink-muted" aria-hidden>
-              ›
-            </span>
-          </button>
-        ))}
+              <span className={isDone ? 'text-positive' : strongText}>
+                <ActivityGlyph id={id} size={18} />
+              </span>
+              <span
+                className="font-semibold text-ink-strong"
+                style={{ fontSize: tpx(baseTextPx) }}
+              >
+                {ACTIVITY_LABELS[id]}
+              </span>
+              {isDone ? (
+                <span className="ml-auto">
+                  <DoneBadge size={22} />
+                </span>
+              ) : (
+                <span className="ml-auto text-[20px] leading-none text-ink-muted" aria-hidden>
+                  ›
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
     </motion.div>
   )
@@ -140,6 +178,7 @@ function RoutineView({
 
 function InvitationView({
   activity,
+  done,
   softBg,
   strongText,
   solidBg,
@@ -151,6 +190,7 @@ function InvitationView({
   reduce,
 }: {
   activity: ActivityId
+  done: boolean
   softBg: string
   strongText: string
   solidBg: string
@@ -171,17 +211,24 @@ function InvitationView({
       className={`${softBg} ${radius} p-5`}
     >
       <p
-        className={`mb-4 font-serif font-semibold leading-snug ${strongText}`}
+        className={`mb-4 font-serif font-semibold leading-snug ${done ? 'text-positive' : strongText}`}
         style={{ fontSize: tpx(headingPx - 4) }}
       >
-        ¿Empezamos con esto?
+        {done ? '¡Muy bien! Ya lo hiciste hoy.' : '¿Empezamos con esto?'}
       </p>
 
       <div className="mb-5 flex items-center gap-4">
         <span
-          className={`flex h-16 w-16 flex-none items-center justify-center rounded-3xl bg-surface ${strongText} shadow-soft`}
+          className={`relative flex h-16 w-16 flex-none items-center justify-center rounded-3xl bg-surface ${
+            done ? 'text-positive' : strongText
+          } shadow-soft`}
         >
           <ActivityGlyph id={activity} size={28} />
+          {done && (
+            <span className="absolute -right-1.5 -top-1.5">
+              <DoneBadge size={24} />
+            </span>
+          )}
         </span>
         <span
           className="font-serif font-semibold text-ink-strong"
@@ -196,7 +243,7 @@ function InvitationView({
         className={`flex w-full items-center justify-center ${radius} ${solidBg} ${onSolid} font-bold shadow-card`}
         style={{ minHeight: primaryButtonMinHeightPx, fontSize: tpx(controlTextPx - 2) }}
       >
-        Empezar →
+        {done ? 'Hacerlo de nuevo →' : 'Empezar →'}
       </button>
     </motion.div>
   )
@@ -214,10 +261,22 @@ export function DailySessionWidget() {
   const { framing, count } = retention.dailySession
   const activities = getDailyActivities(count)
 
+  const [done, setDone] = useState<Set<ActivityId>>(() => new Set())
+  useEffect(() => {
+    let alive = true
+    void getActivitiesDoneToday().then((d) => {
+      if (alive) setDone(d)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
   if (framing === 'challenge') {
     return (
       <ChallengeView
         activities={activities}
+        done={done}
         strongText={accent.strongText}
         radius={radius}
         mode={config.id}
@@ -230,6 +289,7 @@ export function DailySessionWidget() {
     return (
       <RoutineView
         activities={activities}
+        done={done}
         softBg={accent.softBg}
         strongText={accent.strongText}
         radius={radius}
@@ -243,6 +303,7 @@ export function DailySessionWidget() {
   return (
     <InvitationView
       activity={activities[0]}
+      done={done.has(activities[0])}
       softBg={accent.softBg}
       strongText={accent.strongText}
       solidBg={accent.solidBg}

@@ -44,7 +44,6 @@ Antes de dar por terminada cualquier pantalla que pueda mostrarse en Modo Calmo,
 
 ## Flujo de trabajo
 - Trabajá por etapas según el plan de `PROMPT_CLAUDE_CODE.md`. Confirmá antes de pasar de etapa.
-- Después de cambios visuales relevantes, tomá una captura y revisá vos mismo el resultado antes de decir que está listo.
 - No entregues archivos masivos de una sola vez sin contexto; preferí incrementos revisables.
 - Mantené el README actualizado: cómo correr, cómo agregar preguntas al quiz, cómo agregar una actividad.
 

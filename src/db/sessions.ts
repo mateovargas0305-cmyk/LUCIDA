@@ -143,6 +143,13 @@ export async function clearHistory(): Promise<void> {
   await db.sessions.clear()
 }
 
+/** Actividades con al menos una sesión terminada hoy. */
+export async function getActivitiesDoneToday(): Promise<Set<ActivityId>> {
+  const today = localDay()
+  const sessions = await db.sessions.where('day').equals(today).toArray()
+  return new Set(sessions.map((s) => s.activity))
+}
+
 /** Mayor racha histórica (en días) del usuario. */
 export async function getLongestStreak(): Promise<number> {
   const all = await db.sessions.toArray()
