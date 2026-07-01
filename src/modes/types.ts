@@ -176,7 +176,7 @@ export interface AttentionActivityConfig {
   differBy: AttentionDiffBy
   /** @deprecated Usa difficultyStep. */
   subtle: boolean
-  /** Rondas por sesión (solo en modo 'rounds'). */
+  /** Rondas por sesión en la vista de rondas (Calmo, y Libre/Pulso en Ágil/Sereno). */
   rounds: number
   /** 'rounds': N rondas clásicas (Calmo). 'time-attack': tiempo total fijo con score. */
   sessionMode: 'rounds' | 'time-attack'

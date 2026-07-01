@@ -95,7 +95,7 @@ const agil: ModeConfig = {
       columns: 4,
       differBy: 'forma',
       subtle: false,
-      rounds: 0,
+      rounds: 12, // usadas por la vista de rondas (Libre/Pulso); Ráfaga usa time-attack
       sessionMode: 'time-attack',
       sessionDurationSeconds: 15,
       differDimensions: ['color', 'forma', 'tamaño'],
@@ -215,7 +215,7 @@ const sereno: ModeConfig = {
       columns: 3,
       differBy: 'forma',
       subtle: false,
-      rounds: 0,
+      rounds: 10, // usadas por la vista de rondas (Libre/Pulso); Ráfaga usa time-attack
       sessionMode: 'time-attack',
       sessionDurationSeconds: 25,
       differDimensions: ['color', 'forma'],
